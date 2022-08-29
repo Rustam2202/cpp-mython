@@ -133,6 +133,9 @@ namespace parse {
 
 	private:
 		// Реализуйте приватную часть самостоятельно
+		Token current_token_;
+		std::istream& istrm_;
+		uint32_t spaces_count_;
 	};
 
 }  // namespace parse
