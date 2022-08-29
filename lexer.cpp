@@ -88,55 +88,109 @@ namespace parse {
 		//throw std::logic_error("Not implemented"s);
 	}
 
+	void IgnoreSpaces(std::istream& input) {
+		while (input.peek() == ' ') {
+			input.get();
+		}
+	}
+
 	Token Lexer::NextToken() {
 		// Заглушка. Реализуйте метод самостоятельно
 
 		while (!istrm_.eof()) {
 			string str;
 			char ch = istrm_.get();
+			/*switch (ch) {
+			case EOF:
+				parse::token_type::Eof eof_type;
+				current_token_ = eof_type;
+				return current_token_;
+			case '\n':
+				parse::token_type::Newline newline_type;
+				current_token_ = newline_type;
+				return current_token_;
+
+			default:
+				break;
+			}*/
+
+
 			if (ch == ' ' && istrm_.peek() == ' ') {
 				istrm_.putback(' ');
 				string spaces;
 				getline(istrm_, spaces, ' ');
 				return 	parse::token_type::Indent{};
 			}
-			else if (ch == ' ') {
-				continue;
-			}
 			else if (ch == EOF) {
 				parse::token_type::Eof eof_type;
 				current_token_ = eof_type;
 				return current_token_;
 			}
-			else if (isdigit(ch) || ch == '-') {
-				istrm_.putback(ch);
-				parse::token_type::Number number_type;
-				istrm_ >> number_type.value;
-				current_token_ = number_type;
-				return current_token_;
-			}
-			else if (ch == '\n') {
-				parse::token_type::Newline newline_type;
-				current_token_ = newline_type;
-				return current_token_;
-			}
-			else if (!isalpha(ch) && ch != '\n') {
-				//istrm_.putback(ch);
-				parse::token_type::Char char_type;
-				char_type.value = ch;
-				current_token_ = char_type;
-				return current_token_;
-			}
-			else if (ch == '\'' || ch == '\"') {
+			else if (ch == '\'') {
 				//istrm_.putback(ch);
 				string str_line;
 				getline(istrm_, str_line, '\'');
 				parse::token_type::String string_type;
 				string_type.value = str_line;
 				current_token_ = string_type;
+				IgnoreSpaces(istrm_);
 				return current_token_;
 			}
-			else if (isalpha(ch)) {
+			else if (ch == '\"') {
+				//istrm_.putback(ch);
+				string str_line;
+				getline(istrm_, str_line, '\"');
+				parse::token_type::String string_type;
+				string_type.value = str_line;
+				current_token_ = string_type;
+				IgnoreSpaces(istrm_);
+				return current_token_;
+			}
+			else if (isdigit(ch)) {
+				istrm_.putback(ch);
+				parse::token_type::Number number_type;
+				istrm_ >> number_type.value;
+				current_token_ = number_type;
+				IgnoreSpaces(istrm_);
+				return current_token_;
+			}
+			else if (ispunct(ch)) {
+				if (ch == '_' && isalnum(istrm_.peek())) {
+					istrm_.putback(ch);
+					parse::token_type::Id id_type;
+					istrm_ >> id_type.value;
+					current_token_ = id_type;
+					IgnoreSpaces(istrm_);
+					return current_token_;
+				}
+				else {
+					if (type == "==") {
+						current_token_ = parse::token_type::Eq{};
+					}
+					else if (type == "!=") {
+						current_token_ = parse::token_type::NotEq{};
+					}
+					else if (type == "<=") {
+						current_token_ = parse::token_type::LessOrEq{};
+					}
+					else if (type == ">=") {
+						current_token_ = parse::token_type::GreaterOrEq{};
+					}
+
+
+					parse::token_type::Char char_type;
+					char_type.value = ch;
+					current_token_ = char_type;
+					IgnoreSpaces(istrm_);
+					return current_token_;
+				}
+			}
+			else if (ch == '\n') {
+				parse::token_type::Newline newline_type;
+				current_token_ = newline_type;
+				return current_token_;
+			}
+			else if (isalpha(ch) && !isdigit(ch)) {
 				istrm_.putback(ch);
 				string type;
 				istrm_ >> type;
@@ -168,18 +222,6 @@ namespace parse {
 				else if (type == "not") {
 					current_token_ = parse::token_type::Not{};
 				}
-				else if (type == "==") {
-					current_token_ = parse::token_type::Eq{};
-				}
-				else if (type == "!=") {
-					current_token_ = parse::token_type::NotEq{};
-				}
-				else if (type == "<=") {
-					current_token_ = parse::token_type::LessOrEq{};
-				}
-				else if (type == ">=") {
-					current_token_ = parse::token_type::GreaterOrEq{};
-				}
 				else if (type == "None") {
 					current_token_ = parse::token_type::None{};
 				}
@@ -194,9 +236,19 @@ namespace parse {
 					id_type.value = type;
 					current_token_ = id_type;
 				}
+				IgnoreSpaces(istrm_);
 				return current_token_;
 
 			}
+			else if (!isalpha(ch) && ch != '\n') {
+				//istrm_.putback(ch);
+				parse::token_type::Char char_type;
+				char_type.value = ch;
+				current_token_ = char_type;
+				IgnoreSpaces(istrm_);
+				return current_token_;
+			}
+			// string 
 
 
 			/*else {
