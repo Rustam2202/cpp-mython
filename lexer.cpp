@@ -75,9 +75,9 @@ namespace parse {
 		return os << "Unknown token :("sv;
 	}
 
-	Lexer::Lexer(std::istream& input) :istrm_(input) {
+	Lexer::Lexer(std::istream& input) :istrm_(input), current_token_(parse::token_type::None{}) {
 		// Реализуйте конструктор самостоятельно
-		//current_token_ = CurrentToken();
+
 		current_token_ = NextToken();
 	}
 
@@ -94,38 +94,55 @@ namespace parse {
 		}
 	}
 
+	bool Lexer::CheckDedent() {
+		if (spaces_count_ > 0) {
+			spaces_count_ -= 2;
+			current_token_ = parse::token_type::Dedent{};
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
 	Token Lexer::NextToken() {
 		// Заглушка. Реализуйте метод самостоятельно
 
-		while (!istrm_.eof()) {
-			string str;
-			char ch = istrm_.get();
-			/*switch (ch) {
-			case EOF:
-				parse::token_type::Eof eof_type;
-				current_token_ = eof_type;
-				return current_token_;
-			case '\n':
-				parse::token_type::Newline newline_type;
-				current_token_ = newline_type;
-				return current_token_;
+		if ((current_token_ == parse::token_type::Newline{}
+			|| current_token_ == parse::token_type::Dedent{}
+			) && spaces_count_ > 0 && istrm_.peek() != ' ') {
+			current_token_ == parse::token_type::Dedent{};
+			return current_token_;
+		}
 
-			default:
-				break;
-			}*/
-
+		char ch = istrm_.get();
+		while (ch != EOF) {
 
 			if (ch == ' ' && istrm_.peek() == ' ') {
-				istrm_.putback(' ');
-				string spaces;
-				getline(istrm_, spaces, ' ');
-				return 	parse::token_type::Indent{};
+				//istrm_.putback(' ');
+				uint32_t spaces_count_new = 1;
+				while ((ch = istrm_.get()) == ' ') {
+					spaces_count_new++;
+				}
+				istrm_.putback(ch);
+				if (spaces_count_new > spaces_count_) {
+					//parse::token_type::Indent indent_type;
+					spaces_count_ = spaces_count_new;
+					current_token_ = parse::token_type::Indent{};
+					return current_token_;
+					//return 	parse::token_type::Indent{};
+				}
+				else if (spaces_count_new < spaces_count_) {
+					spaces_count_ = spaces_count_new;
+					current_token_ = parse::token_type::Dedent{};
+					return current_token_;
+					//return 	parse::token_type::Dedent{};
+				}
+				else {
+					return NextToken();
+				}
 			}
-			else if (ch == EOF) {
-				parse::token_type::Eof eof_type;
-				current_token_ = eof_type;
-				return current_token_;
-			}
+
 			else if (ch == '\'') {
 				//istrm_.putback(ch);
 				string str_line;
@@ -163,29 +180,43 @@ namespace parse {
 					IgnoreSpaces(istrm_);
 					return current_token_;
 				}
-				else {
-					if (type == "==") {
+				else if (ispunct(istrm_.peek())) {
+					if (ch == '=' && istrm_.peek() == '=') {
+						istrm_.get();
 						current_token_ = parse::token_type::Eq{};
 					}
-					else if (type == "!=") {
+					else if (ch == '!' && istrm_.peek() == '=') {
+						istrm_.get();
 						current_token_ = parse::token_type::NotEq{};
 					}
-					else if (type == "<=") {
+					else if (ch == '<' && istrm_.peek() == '=') {
+						istrm_.get();
 						current_token_ = parse::token_type::LessOrEq{};
 					}
-					else if (type == ">=") {
+					else if (ch == '>' && istrm_.peek() == '=') {
+						istrm_.get();
 						current_token_ = parse::token_type::GreaterOrEq{};
 					}
-
-
+					else {
+						parse::token_type::Char char_type;
+						char_type.value = ch;
+						current_token_ = char_type;
+					}
+				}
+				else {
 					parse::token_type::Char char_type;
 					char_type.value = ch;
 					current_token_ = char_type;
-					IgnoreSpaces(istrm_);
-					return current_token_;
 				}
+
+				IgnoreSpaces(istrm_);
+				return current_token_;
 			}
+
 			else if (ch == '\n') {
+				if (current_token_ == parse::token_type::None{}) {
+					return NextToken();
+				}
 				parse::token_type::Newline newline_type;
 				current_token_ = newline_type;
 				return current_token_;
@@ -248,6 +279,12 @@ namespace parse {
 				IgnoreSpaces(istrm_);
 				return current_token_;
 			}
+			else if (ch == EOF) {
+				parse::token_type::Eof eof_type;
+				current_token_ = eof_type;
+				return current_token_;
+			}
+
 			// string 
 
 
