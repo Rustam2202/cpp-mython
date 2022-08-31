@@ -111,34 +111,47 @@ namespace parse {
 		while (ch != EOF) {
 
 			uint32_t spaces_count_new = 0;
+			if (ch == ' ' && istrm_.peek() == ' ' && current_token_.Is<Newline>()) {
+				spaces_count_new = 1;
+				while (ch == ' ' || spaces_count_new < spaces_count_) {
+					ch = istrm_.get();
+					spaces_count_new++;
+				}
+				if (ch == ' ' && istrm_.peek() == ' ') {
+					current_token_ == Indent{};
+				}
+				
+			}
+
 			if (current_token_.Is<Newline>() || current_token_.Is<Indent>() || current_token_.Is<Dedent>()) {
 				if (ch == ' ' && istrm_.peek() == ' ') {
 					spaces_count_new = 1;
 					while ((ch = istrm_.get()) == ' ') {
 						spaces_count_new++;
 					}
-					if (spaces_count_new < spaces_count_) {
-						istrm_.putback(ch);
-						spaces_count_ = spaces_count_new;
-						current_token_ = parse::token_type::Dedent{};
-						return current_token_;
-					}
-					else if (spaces_count_new > spaces_count_) {
-						istrm_.putback(ch);
-						spaces_count_ = spaces_count_new;
-						current_token_ = parse::token_type::Indent{};
-						return current_token_;
-					}
-
 				}
-				else {
+
+				if (spaces_count_new < spaces_count_) {
 					istrm_.putback(ch);
-					if ((current_token_.Is<Newline>() || current_token_.Is<Dedent>()) && !current_token_.Is<Indent>() && spaces_count_ > 0) {
-						spaces_count_ -= 2;
-						current_token_ = Dedent{};
-						return NextToken();
-						//return current_token_;
-					}
+					spaces_count_ = spaces_count_new;
+					current_token_ = parse::token_type::Dedent{};
+					return current_token_;
+				}
+				else if (spaces_count_new > spaces_count_) {
+					istrm_.putback(ch);
+					spaces_count_ = spaces_count_new;
+					current_token_ = parse::token_type::Indent{};
+					return current_token_;
+				}
+				else if (spaces_count_new == 0) {
+
+					istrm_.putback(ch);
+					//if ((current_token_.Is<Newline>() || current_token_.Is<Dedent>()) && !current_token_.Is<Indent>() && spaces_count_ > 0) {
+					//	spaces_count_ -= 2;
+					//	current_token_ = Dedent{};
+					//	return NextToken();
+					//	//return current_token_;
+					//}
 
 					string type;
 					istrm_ >> type;
@@ -187,8 +200,8 @@ namespace parse {
 					IgnoreSpaces(istrm_);
 					return current_token_;
 				}
-
 			}
+
 
 			if (ch == '\'') {
 				//istrm_.putback(ch);
