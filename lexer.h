@@ -138,7 +138,8 @@ namespace parse {
 		Token current_token_;
 		std::istream& istrm_;
 		uint32_t spaces_count_=0;
-		uint32_t indent_ = 0;
+		uint32_t indent_pos_ = 0;
+		int indent_offset_ = 0;
 	};
 
 }  // namespace parse

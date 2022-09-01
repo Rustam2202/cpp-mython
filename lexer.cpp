@@ -111,48 +111,110 @@ namespace parse {
 		while (ch != EOF) {
 
 			uint32_t spaces_count_new = 0;
-			if (ch == ' ' && istrm_.peek() == ' ' && current_token_.Is<Newline>()) {
-				spaces_count_new = 1;
-				while (ch == ' ' || spaces_count_new < spaces_count_) {
+			int indent_pos_this = 0;
+			if (current_token_.Is<Newline>()) {
+				while (ch == ' ' && istrm_.peek() == ' ') {
+					istrm_.get();
+					indent_pos_this++;
 					ch = istrm_.get();
-					spaces_count_new++;
 				}
-				if (ch == ' ' && istrm_.peek() == ' ') {
-					current_token_ == Indent{};
-				}
-				
+				indent_offset_ = indent_pos_this - indent_pos_;
 			}
 
-			if (current_token_.Is<Newline>() || current_token_.Is<Indent>() || current_token_.Is<Dedent>()) {
-				if (ch == ' ' && istrm_.peek() == ' ') {
-					spaces_count_new = 1;
-					while ((ch = istrm_.get()) == ' ') {
-						spaces_count_new++;
+			if (indent_offset_ > 0) {
+				istrm_.putback(ch);
+				indent_pos_++;
+				indent_offset_--;
+				current_token_ = Indent{};
+				return current_token_;
+			}
+			else if (indent_offset_ < 0) {
+				istrm_.putback(ch);
+				indent_pos_--;
+				indent_offset_++;
+				current_token_ = Dedent{};
+				return current_token_;
+			}
+			else {
+				if (ch == '\'') {
+					//istrm_.putback(ch);
+					string str_line;
+					getline(istrm_, str_line, '\'');
+					parse::token_type::String string_type;
+					string_type.value = str_line;
+					current_token_ = string_type;
+					IgnoreSpaces(istrm_);
+					return current_token_;
+				}
+				else if (ch == '\"') {
+					//istrm_.putback(ch);
+					string str_line;
+					getline(istrm_, str_line, '\"');
+					parse::token_type::String string_type;
+					string_type.value = str_line;
+					current_token_ = string_type;
+					IgnoreSpaces(istrm_);
+					return current_token_;
+				}
+				else if (isdigit(ch)) {
+					istrm_.putback(ch);
+					parse::token_type::Number number_type;
+					istrm_ >> number_type.value;
+					current_token_ = number_type;
+					IgnoreSpaces(istrm_);
+					return current_token_;
+				}
+				else if (ispunct(ch)) {
+					if (ch == '_' && isalnum(istrm_.peek())) {
+						istrm_.putback(ch);
+						parse::token_type::Id id_type;
+						istrm_ >> id_type.value;
+						current_token_ = id_type;
+						IgnoreSpaces(istrm_);
+						return current_token_;
 					}
-				}
+					else if (ispunct(istrm_.peek())) {
+						if (ch == '=' && istrm_.peek() == '=') {
+							istrm_.get();
+							current_token_ = parse::token_type::Eq{};
+						}
+						else if (ch == '!' && istrm_.peek() == '=') {
+							istrm_.get();
+							current_token_ = parse::token_type::NotEq{};
+						}
+						else if (ch == '<' && istrm_.peek() == '=') {
+							istrm_.get();
+							current_token_ = parse::token_type::LessOrEq{};
+						}
+						else if (ch == '>' && istrm_.peek() == '=') {
+							istrm_.get();
+							current_token_ = parse::token_type::GreaterOrEq{};
+						}
+						else {
+							parse::token_type::Char char_type;
+							char_type.value = ch;
+							current_token_ = char_type;
+						}
+					}
+					else {
+						parse::token_type::Char char_type;
+						char_type.value = ch;
+						current_token_ = char_type;
+					}
 
-				if (spaces_count_new < spaces_count_) {
-					istrm_.putback(ch);
-					spaces_count_ = spaces_count_new;
-					current_token_ = parse::token_type::Dedent{};
+					IgnoreSpaces(istrm_);
 					return current_token_;
 				}
-				else if (spaces_count_new > spaces_count_) {
-					istrm_.putback(ch);
-					spaces_count_ = spaces_count_new;
-					current_token_ = parse::token_type::Indent{};
+				else if (ch == '\n') {
+					if (current_token_ == parse::token_type::None{}) {
+						return NextToken();
+					}
+					parse::token_type::Newline newline_type;
+					current_token_ = newline_type;
 					return current_token_;
 				}
-				else if (spaces_count_new == 0) {
-
+				else if (isalpha(ch) && !isdigit(ch)) {
 					istrm_.putback(ch);
-					//if ((current_token_.Is<Newline>() || current_token_.Is<Dedent>()) && !current_token_.Is<Indent>() && spaces_count_ > 0) {
-					//	spaces_count_ -= 2;
-					//	current_token_ = Dedent{};
-					//	return NextToken();
-					//	//return current_token_;
-					//}
-
 					string type;
 					istrm_ >> type;
 
@@ -199,161 +261,26 @@ namespace parse {
 					}
 					IgnoreSpaces(istrm_);
 					return current_token_;
-				}
-			}
 
-
-			if (ch == '\'') {
-				//istrm_.putback(ch);
-				string str_line;
-				getline(istrm_, str_line, '\'');
-				parse::token_type::String string_type;
-				string_type.value = str_line;
-				current_token_ = string_type;
-				IgnoreSpaces(istrm_);
-				return current_token_;
-			}
-			else if (ch == '\"') {
-				//istrm_.putback(ch);
-				string str_line;
-				getline(istrm_, str_line, '\"');
-				parse::token_type::String string_type;
-				string_type.value = str_line;
-				current_token_ = string_type;
-				IgnoreSpaces(istrm_);
-				return current_token_;
-			}
-			else if (isdigit(ch)) {
-				istrm_.putback(ch);
-				parse::token_type::Number number_type;
-				istrm_ >> number_type.value;
-				current_token_ = number_type;
-				IgnoreSpaces(istrm_);
-				return current_token_;
-			}
-			else if (ispunct(ch)) {
-				if (ch == '_' && isalnum(istrm_.peek())) {
-					istrm_.putback(ch);
-					parse::token_type::Id id_type;
-					istrm_ >> id_type.value;
-					current_token_ = id_type;
-					IgnoreSpaces(istrm_);
-					return current_token_;
 				}
-				else if (ispunct(istrm_.peek())) {
-					if (ch == '=' && istrm_.peek() == '=') {
-						istrm_.get();
-						current_token_ = parse::token_type::Eq{};
-					}
-					else if (ch == '!' && istrm_.peek() == '=') {
-						istrm_.get();
-						current_token_ = parse::token_type::NotEq{};
-					}
-					else if (ch == '<' && istrm_.peek() == '=') {
-						istrm_.get();
-						current_token_ = parse::token_type::LessOrEq{};
-					}
-					else if (ch == '>' && istrm_.peek() == '=') {
-						istrm_.get();
-						current_token_ = parse::token_type::GreaterOrEq{};
-					}
-					else {
-						parse::token_type::Char char_type;
-						char_type.value = ch;
-						current_token_ = char_type;
-					}
-				}
-				else {
+				else if (!isalpha(ch) && ch != '\n') {
+					//istrm_.putback(ch);
 					parse::token_type::Char char_type;
 					char_type.value = ch;
 					current_token_ = char_type;
+					IgnoreSpaces(istrm_);
+					return current_token_;
 				}
-
-				IgnoreSpaces(istrm_);
-				return current_token_;
-			}
-			else if (ch == '\n') {
-				if (current_token_ == parse::token_type::None{}) {
-					return NextToken();
+				else if (ch == EOF) {
+					parse::token_type::Eof eof_type;
+					current_token_ = eof_type;
+					return current_token_;
 				}
-				parse::token_type::Newline newline_type;
-				current_token_ = newline_type;
-				return current_token_;
-			}
-			else if (isalpha(ch) && !isdigit(ch)) {
-				istrm_.putback(ch);
-
-				/*	if (current_token_.Is<Newline>() && !current_token_.Is<Indent>() && spaces_count_ > 0) {
-						spaces_count_ -= 2;
-						current_token_ = Dedent{};
-						return current_token_;
-					}*/
-
-				string type;
-				istrm_ >> type;
-
-				if (type == "class") {
-					current_token_ = parse::token_type::Class{};
-				}
-				else if (type == "return") {
-					current_token_ = parse::token_type::Return{};
-				}
-				else if (type == "if") {
-					current_token_ = parse::token_type::If{};
-				}
-				else if (type == "else") {
-					current_token_ = parse::token_type::Else{};
-				}
-				else if (type == "def") {
-					current_token_ = parse::token_type::Def{};
-				}
-				else if (type == "print") {
-					current_token_ = parse::token_type::Print{};
-				}
-				else if (type == "and") {
-					current_token_ = parse::token_type::And{};
-				}
-				else if (type == "or") {
-					current_token_ = parse::token_type::Or{};
-				}
-				else if (type == "not") {
-					current_token_ = parse::token_type::Not{};
-				}
-				else if (type == "None") {
-					current_token_ = parse::token_type::None{};
-				}
-				else if (type == "True") {
-					current_token_ = parse::token_type::True{};
-				}
-				else if (type == "False") {
-					current_token_ = parse::token_type::False{};
-				}
-				else {
-					parse::token_type::Id id_type;
-					id_type.value = type;
-					current_token_ = id_type;
-				}
-				IgnoreSpaces(istrm_);
-				return current_token_;
 
 			}
-			else if (!isalpha(ch) && ch != '\n') {
-				//istrm_.putback(ch);
-				parse::token_type::Char char_type;
-				char_type.value = ch;
-				current_token_ = char_type;
-				IgnoreSpaces(istrm_);
-				return current_token_;
-			}
-			else if (ch == EOF) {
-				parse::token_type::Eof eof_type;
-				current_token_ = eof_type;
-				return current_token_;
-			}
-
-
 			//		throw std::logic_error("Not implemented"s);
 		}
+
 		parse::token_type::Eof eof_type;
 		current_token_ = eof_type;
 		return current_token_;
