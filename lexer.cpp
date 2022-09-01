@@ -223,14 +223,14 @@ namespace parse {
 				else if (ispunct(ch) && ch != '_') {
 					return ParsePunct(ch);
 				}
-				else if (ch == '\n') {
+				/*else if (ch == '\n') {
 					if (current_token_.Is<None>() || current_token_.Is<Newline>()) {
 						return NextToken();
 					}
 					parse::token_type::Newline newline_type;
 					current_token_ = newline_type;
 					return current_token_;
-				}
+				}*/
 				else if (ch == EOF) {
 					parse::token_type::Eof eof_type;
 					current_token_ = eof_type;
@@ -243,13 +243,14 @@ namespace parse {
 			current_token_ = Dedent{};
 			return current_token_;
 		}
-		/*if (!current_token_.Is<Newline>()) {
-			current_token_ = Newline{};
+		if (current_token_.Is<None>() /*&& !current_token_.Is<Newline>()*/) {
+			current_token_ = Eof{};
 			return current_token_;
-		}*/
+		}
+		else if (!current_token_.Is<None>()) {
 
-		parse::token_type::Eof eof_type;
-		current_token_ = eof_type;
+		}
+		current_token_ = Eof{};
 		return current_token_;
 
 		throw std::logic_error("Not implemented"s);
