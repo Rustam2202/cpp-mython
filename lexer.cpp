@@ -110,6 +110,15 @@ namespace parse {
 		char ch = istrm_.get();
 		while (ch != EOF) {
 
+			if (ch == '\n') {
+				if (current_token_.Is<None>() || current_token_.Is<Newline>()) {
+					return NextToken();
+				}
+				parse::token_type::Newline newline_type;
+				current_token_ = newline_type;
+				return current_token_;
+			}
+
 			uint32_t spaces_count_new = 0;
 			int indent_pos_this = 0;
 			if (current_token_.Is<Newline>()) {
@@ -206,7 +215,7 @@ namespace parse {
 					return current_token_;
 				}
 				else if (ch == '\n') {
-					if (current_token_ == parse::token_type::None{}) {
+					if (current_token_.Is<None>() || current_token_.Is<Newline>()) {
 						return NextToken();
 					}
 					parse::token_type::Newline newline_type;
@@ -214,9 +223,16 @@ namespace parse {
 					return current_token_;
 				}
 				else if (isalpha(ch) && !isdigit(ch)) {
-					istrm_.putback(ch);
+					//istrm_.putback(ch);
 					string type;
-					istrm_ >> type;
+					//istrm_ >> type;
+					type.push_back(ch);
+					while (true) {
+						if ((ispunct(istrm_.peek()) && istrm_.peek() != '_') || isspace(istrm_.peek()) || istrm_.peek() == '\n' || istrm_.peek() == EOF) {
+							break;
+						}
+						type.push_back(istrm_.get());
+					}
 
 					if (type == "class") {
 						current_token_ = parse::token_type::Class{};
@@ -280,7 +296,11 @@ namespace parse {
 			}
 			//		throw std::logic_error("Not implemented"s);
 		}
-
+		if (indent_pos_ > 0) {
+			indent_pos_--;
+			current_token_ = Dedent{};
+			return current_token_;
+		}
 		parse::token_type::Eof eof_type;
 		current_token_ = eof_type;
 		return current_token_;
