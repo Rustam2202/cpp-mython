@@ -101,15 +101,24 @@ namespace parse {
 		const T& Expect() const {
 			using namespace std::literals;
 			// Заглушка. Реализуйте метод самостоятельно
+			if (current_token_.Is<T>()) {
+				return current_token_.As<T>();
+			}
 			throw LexerError("Not implemented"s);
 		}
 
 		// Метод проверяет, что текущий токен имеет тип T, а сам токен содержит значение value.
 		// В противном случае метод выбрасывает исключение LexerError
 		template <typename T, typename U>
-		void Expect(const U& /*value*/) const {
+		void Expect(const U& value) const {
 			using namespace std::literals;
 			// Заглушка. Реализуйте метод самостоятельно
+			using namespace parse::token_type;
+			if (current_token_.Is<T>()) {
+				if (current_token_.TryAs<T>()->value == value) {
+					return;
+				}
+			}
 			throw LexerError("Not implemented"s);
 		}
 
@@ -119,25 +128,34 @@ namespace parse {
 		const T& ExpectNext() {
 			using namespace std::literals;
 			// Заглушка. Реализуйте метод самостоятельно
-			throw LexerError("Not implemented"s);
+			NextToken();
+			return Expect<T>();
+			//throw LexerError("Not implemented"s);
 		}
 
 		// Метод проверяет, что следующий токен имеет тип T, а сам токен содержит значение value.
 		// В противном случае метод выбрасывает исключение LexerError
 		template <typename T, typename U>
-		void ExpectNext(const U& /*value*/) {
+		void ExpectNext(const U& value) {
 			using namespace std::literals;
 			// Заглушка. Реализуйте метод самостоятельно
-			throw LexerError("Not implemented"s);
+			NextToken();
+			Expect<T>(value);
+
+			//throw LexerError("Not implemented"s);
 		}
 
 	private:
 		// Реализуйте приватную часть самостоятельно
-		bool CheckDedent();
+		Token& ParseDigit();
+		Token& ParseString(char);
+		Token& ParseId(char);
+		Token& ParsePunct(char);
+
+		std::istream& istrm_;
 
 		Token current_token_;
-		std::istream& istrm_;
-		uint32_t spaces_count_=0;
+		uint32_t spaces_count_ = 0;
 		uint32_t indent_pos_ = 0;
 		int indent_offset_ = 0;
 	};
