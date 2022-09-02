@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "runtime.h"
 #include "test_runner_p.h"
 
 #include <iostream>
@@ -7,19 +8,40 @@ namespace parse {
 	void RunOpenLexerTests(TestRunner& tr);
 }
 
-int main() {
-	try {
+namespace runtime {
+	void RunObjectHolderTests(TestRunner& tr);
+	void RunObjectsTests(TestRunner& tr);
+}  // namespace runtime
+
+namespace {
+
+	void TestAll() {
 		TestRunner tr;
-		parse::RunOpenLexerTests(tr);
-		parse::Lexer lexer(std::cin);
-		parse::Token t;
-		while ((t = lexer.CurrentToken()) != parse::token_type::Eof{}) {
-			std::cout << t << std::endl;
-			lexer.NextToken();
-		}
+		runtime::RunObjectHolderTests(tr);
+		runtime::RunObjectsTests(tr);
 	}
-	catch (const std::exception& e) {
-		std::cerr << e.what();
-		return 1;
-	}
+
+}  // namespace
+
+int main() {
+	TestAll();
+
+	return 0;
 }
+
+//int main() {
+//	try {
+//		TestRunner tr;
+//		parse::RunOpenLexerTests(tr);
+//		parse::Lexer lexer(std::cin);
+//		parse::Token t;
+//		while ((t = lexer.CurrentToken()) != parse::token_type::Eof{}) {
+//			std::cout << t << std::endl;
+//			lexer.NextToken();
+//		}
+//	}
+//	catch (const std::exception& e) {
+//		std::cerr << e.what();
+//		return 1;
+//	}
+//}

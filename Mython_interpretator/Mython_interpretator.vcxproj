@@ -22,9 +22,12 @@
     <ClCompile Include="..\lexer.cpp" />
     <ClCompile Include="..\lexer_test_open.cpp" />
     <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\runtime.cpp" />
+    <ClCompile Include="..\runtime_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\lexer.h" />
+    <ClInclude Include="..\runtime.h" />
     <ClInclude Include="..\test_runner_p.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
