@@ -100,9 +100,29 @@ namespace parse {
 		return current_token_;
 	}
 
-	Token& Lexer::ParseString(char ch) {
+	Token& Lexer::ParseString(char quote_type) {
 		string str_line;
-		getline(istrm_, str_line, ch);
+		char ch = istrm_.get();
+		while (ch != quote_type) {
+			if (ch == '\\') {
+				char ch_next = istrm_.peek();
+
+				switch (ch_next) {
+				case '\'':str_line.push_back(istrm_.get()); break;
+				case '\"':str_line.push_back(istrm_.get()); break;
+				case '\\':str_line.push_back(istrm_.get()); break;
+				case 'n':str_line.push_back('\n'); istrm_.get(); break;
+				case 't':str_line.push_back('\t'); istrm_.get(); break;
+				case 'r':str_line.push_back('\r'); istrm_.get(); break;
+				default:
+					break;
+				}
+			}
+			else {
+				str_line.push_back(ch);
+			}
+			ch = istrm_.get();
+		}
 		parse::token_type::String string_type;
 		string_type.value = str_line;
 		current_token_ = string_type;
@@ -243,12 +263,13 @@ namespace parse {
 			current_token_ = Dedent{};
 			return current_token_;
 		}
-		if (current_token_.Is<None>() /*&& !current_token_.Is<Newline>()*/) {
+		if (current_token_.Is<None>() || current_token_.Is<Eof>() || current_token_.Is<Dedent>()) {
 			current_token_ = Eof{};
 			return current_token_;
 		}
-		else if (!current_token_.Is<None>()) {
-
+		else if (!current_token_.Is<None>() && !current_token_.Is<Newline>()) {
+			current_token_ = Newline{};
+			return current_token_;
 		}
 		current_token_ = Eof{};
 		return current_token_;
@@ -257,3 +278,6 @@ namespace parse {
 	}
 
 }  // namespace parse
+
+// 'word' "two words" 'long string with a double quote " inside' "another long string with single quote ' inside" "\"\'\t\n"
+// "\"\'\t\n"
