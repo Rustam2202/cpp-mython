@@ -148,6 +148,7 @@ namespace runtime {
 	private:
 		std::string class_name_;
 		std::vector<Method> methods_;
+		Class* parent_class_ = nullptr;
 		Closure closure_;
 	};
 
@@ -178,6 +179,8 @@ namespace runtime {
 		[[nodiscard]] Closure& Fields();
 		// Возвращает константную ссылку на Closure, содержащую поля объекта
 		[[nodiscard]] const Closure& Fields() const;
+
+		//	std::vector<Method>& GetMethods() { return class_.GetMethods(); }
 
 	private:
 		const Class& class_;

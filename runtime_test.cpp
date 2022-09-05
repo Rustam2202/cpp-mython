@@ -122,7 +122,6 @@ namespace runtime {
 			vector<Method> base_methods;
 			base_methods.push_back({ "test"s,	{"arg1"s, "arg2"s}, make_unique<TestMethodBody>(base_method_1) });
 			base_methods.push_back({ "test_2"s, {"arg1"s},			make_unique<TestMethodBody>(base_method_2) });
-			//		auto a = base_methods[0].body.get()->Execute(base_closure, context); //
 			Class base_class{ "Base"s, std::move(base_methods), nullptr };
 			ClassInstance base_inst{ base_class };
 			base_inst.Fields()["base_field"s] = ObjectHolder::Own(String{ "hello"s });

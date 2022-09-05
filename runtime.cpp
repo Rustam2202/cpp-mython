@@ -98,29 +98,33 @@ namespace runtime {
 
 	ObjectHolder ClassInstance::Call(const std::string& method, const std::vector<ObjectHolder>& actual_args, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно.
+		Closure closure;
+		closure["self"] = ObjectHolder::Share(*this);
 
-		closure_["self"] = ObjectHolder::Share(*this);
 		auto finded = class_.GetMethod(method);
 		if (finded != nullptr) {
-			//	return (*finded).body.get()->Execute
+			for (int i = 0; i < actual_args.size(); ++i) {
+				closure[finded->formal_params[i]] = actual_args[i];
+			}
+			return (*finded).body.get()->Execute(closure, context);
 		}
 		else {
 			throw std::runtime_error("Not implemented"s);
 		}
 	}
 
-	Class::Class(std::string name, std::vector<Method> methods, const Class* parent)
-		//:class_name_(name),methods_(methods),parent_class_(parent)
-	{
+	Class::Class(std::string name, std::vector<Method> methods, const Class* parent) {
 		// Реализуйте метод самостоятельно
-		if (parent != nullptr) {
-			class_name_ = parent->class_name_;
-			//	methods_ = std::move(parent->methods_);
+		parent_class_ = const_cast<Class*>(parent);
+		methods_ = std::move(methods);
+		if (parent_class_ == nullptr) {
+			class_name_ = name;
+			
 		}
 		else {
-			class_name_ = name;
-			methods_ = std::move(methods);
+			class_name_ = parent->class_name_;
 		}
+
 		closure_["self"];
 		for (const auto& method : methods_) {
 			for (const auto& arg : method.formal_params) {
@@ -136,8 +140,13 @@ namespace runtime {
 		if (finded != methods_.end()) {
 			return &(*finded);
 		}
+		else if (parent_class_ != nullptr) {
+			//	const Method* finded_parent = parent_class_->GetMethod(name);
+			return parent_class_->GetMethod(name);
+		}
 		else {
 			return nullptr;
+
 		}
 	}
 
