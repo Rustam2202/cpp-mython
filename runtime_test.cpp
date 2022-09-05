@@ -120,15 +120,14 @@ namespace runtime {
 				return ObjectHolder::Own(Number{ 456 });
 			};
 			vector<Method> base_methods;
-			base_methods.push_back(
-				{ "test"s, {"arg1"s, "arg2"s}, make_unique<TestMethodBody>(base_method_1) });
-			base_methods.push_back({ "test_2"s, {"arg1"s}, make_unique<TestMethodBody>(base_method_2) });
+			base_methods.push_back({ "test"s,	{"arg1"s, "arg2"s}, make_unique<TestMethodBody>(base_method_1) });
+			base_methods.push_back({ "test_2"s, {"arg1"s},			make_unique<TestMethodBody>(base_method_2) });
+			//		auto a = base_methods[0].body.get()->Execute(base_closure, context); //
 			Class base_class{ "Base"s, std::move(base_methods), nullptr };
 			ClassInstance base_inst{ base_class };
 			base_inst.Fields()["base_field"s] = ObjectHolder::Own(String{ "hello"s });
 			ASSERT(base_inst.HasMethod("test"s, 2U));
-			auto res = base_inst.Call(
-				"test"s, { ObjectHolder::Own(Number{1}), ObjectHolder::Own(String{"abc"s}) }, context);
+			auto res = base_inst.Call("test"s, { ObjectHolder::Own(Number{1}), ObjectHolder::Own(String{"abc"s}) }, context);
 			ASSERT(Equal(res, ObjectHolder::Own(Number{ 123 }), context));
 			ASSERT_EQUAL(base_closure.size(), 3U);
 			ASSERT_EQUAL(base_closure.count("self"s), 1U);

@@ -144,6 +144,11 @@ namespace runtime {
 
 		// Выводит в os строку "Class <имя класса>", например "Class cat"
 		void Print(std::ostream& os, Context& context) override;
+
+	private:
+		std::string class_name_;
+		std::vector<Method> methods_;
+		Closure closure_;
 	};
 
 	// Экземпляр класса
@@ -173,6 +178,10 @@ namespace runtime {
 		[[nodiscard]] Closure& Fields();
 		// Возвращает константную ссылку на Closure, содержащую поля объекта
 		[[nodiscard]] const Closure& Fields() const;
+
+	private:
+		const Class& class_;
+		Closure closure_;
 	};
 
 	/*
