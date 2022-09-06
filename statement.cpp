@@ -16,23 +16,39 @@ namespace ast {
 		const string INIT_METHOD = "__init__"s;
 	}  // namespace
 
-	ObjectHolder Assignment::Execute(Closure& /*closure*/, Context& /*context*/) {
+	ObjectHolder Assignment::Execute(Closure& closure, Context& /*context*/) {
 		// Заглушка. Реализуйте метод самостоятельно
-		return {};
+
+
+		if (closure.count(name_)) {
+			return closure.at(name_);
+		}
+		else {
+			throw std::runtime_error("Not implemented"s);
+		}
 	}
 
-	Assignment::Assignment(std::string /*var*/, std::unique_ptr<Statement> /*rv*/) {
+	Assignment::Assignment(std::string var, std::unique_ptr<Statement> rv) {
+		name_ = var;
+		value_ = rv.get();
+	//	value;
 	}
 
-	VariableValue::VariableValue(const std::string& /*var_name*/) {
+	VariableValue::VariableValue(const std::string& var_name) {
+		name_ = var_name;
 	}
 
 	VariableValue::VariableValue(std::vector<std::string> /*dotted_ids*/) {
 	}
 
-	ObjectHolder VariableValue::Execute(Closure& /*closure*/, Context& /*context*/) {
+	ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
 		// Заглушка. Реализуйте метод самостоятельно
-		return {};
+		if (closure.count(name_)) {
+			return closure.at(name_);
+		}
+		else {
+			throw std::runtime_error("Not implemented"s);
+		}
 	}
 
 	unique_ptr<Print> Print::Variable(const std::string& /*name*/) {

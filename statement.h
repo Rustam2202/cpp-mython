@@ -17,8 +17,7 @@ namespace ast {
 			: value_(std::move(v)) {
 		}
 
-		runtime::ObjectHolder Execute(runtime::Closure& /*closure*/,
-			runtime::Context& /*context*/) override {
+		runtime::ObjectHolder Execute(runtime::Closure& /*closure*/, runtime::Context& /*context*/) override {
 			return runtime::ObjectHolder::Share(value_);
 		}
 
@@ -41,6 +40,8 @@ namespace ast {
 		explicit VariableValue(std::vector<std::string> dotted_ids);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		std::string name_;
 	};
 
 	// Присваивает переменной, имя которой задано в параметре var, значение выражения rv
@@ -49,6 +50,9 @@ namespace ast {
 		Assignment(std::string var, std::unique_ptr<Statement> rv);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		std::string name_;
+		Statement* value_;
 	};
 
 	// Присваивает полю object.field_name значение выражения rv
