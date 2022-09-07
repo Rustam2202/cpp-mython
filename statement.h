@@ -50,9 +50,10 @@ namespace ast {
 		Assignment(std::string var, std::unique_ptr<Statement> rv);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+
 	private:
 		std::string name_;
-		Statement* value_;
+		std::unique_ptr<Statement> rv_;
 	};
 
 	// Присваивает полю object.field_name значение выражения rv
@@ -61,6 +62,10 @@ namespace ast {
 		FieldAssignment(VariableValue object, std::string field_name, std::unique_ptr<Statement> rv);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		VariableValue object_;
+		std::string name_;
+		std::unique_ptr<Statement> rv_;
 	};
 
 	// Значение None

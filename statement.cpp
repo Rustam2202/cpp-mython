@@ -16,22 +16,15 @@ namespace ast {
 		const string INIT_METHOD = "__init__"s;
 	}  // namespace
 
-	ObjectHolder Assignment::Execute(Closure& closure, Context& /*context*/) {
+	ObjectHolder Assignment::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-
-
-		if (closure.count(name_)) {
-			return closure.at(name_);
-		}
-		else {
-			throw std::runtime_error("Not implemented"s);
-		}
+		closure[name_] = rv_.get()->Execute(closure, context);
+		return closure.at(name_);
 	}
 
 	Assignment::Assignment(std::string var, std::unique_ptr<Statement> rv) {
 		name_ = var;
-		value_ = rv.get();
-	//	value;
+		rv_ = std::move(rv);
 	}
 
 	VariableValue::VariableValue(const std::string& var_name) {
@@ -39,6 +32,7 @@ namespace ast {
 	}
 
 	VariableValue::VariableValue(std::vector<std::string> /*dotted_ids*/) {
+
 	}
 
 	ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
@@ -123,13 +117,21 @@ namespace ast {
 		return {};
 	}
 
-	FieldAssignment::FieldAssignment(VariableValue /*object*/, std::string /*field_name*/,
-		std::unique_ptr<Statement> /*rv*/) {
+	FieldAssignment::FieldAssignment(VariableValue object, std::string field_name, std::unique_ptr<Statement> rv) :object_(object) {
+		//object_ = std::move(object);
+		name_ = field_name;
+		rv_ = std::move(rv);
 	}
 
-	ObjectHolder FieldAssignment::Execute(Closure& /*closure*/, Context& /*context*/) {
+	ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		return {};
+		ObjectHolder a = object_.Execute(closure, context);
+		auto b = a.TryAs<runtime::ClassInstance>();
+		
+	return	b->Fields().at(name_);
+		auto c = 0;
+		//return	rv_.get()->Execute(closure, context);
+		//return {};
 	}
 
 	IfElse::IfElse(std::unique_ptr<Statement> /*condition*/, std::unique_ptr<Statement> /*if_body*/,
