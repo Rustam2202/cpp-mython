@@ -31,7 +31,10 @@ namespace ast {
 		name_ = var_name;
 	}
 
-	VariableValue::VariableValue(std::vector<std::string> /*dotted_ids*/) {
+	VariableValue::VariableValue(std::vector<std::string> dotted_ids) :dotted_ids_(dotted_ids) {
+		name_ = dotted_ids.front();
+
+		runtime::Class cls{ dotted_ids[0],{dotted_ids[1]},nullptr };
 
 	}
 
@@ -118,20 +121,20 @@ namespace ast {
 	}
 
 	FieldAssignment::FieldAssignment(VariableValue object, std::string field_name, std::unique_ptr<Statement> rv) :object_(object) {
-		//object_ = std::move(object);
-		name_ = field_name;
+		object_ = std::move(object);
+		field_name_ = field_name;
 		rv_ = std::move(rv);
 	}
 
 	ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		ObjectHolder a = object_.Execute(closure, context);
-		auto b = a.TryAs<runtime::ClassInstance>();
-		
-	return	b->Fields().at(name_);
-		auto c = 0;
-		//return	rv_.get()->Execute(closure, context);
-		//return {};
+
+		auto o = object_.Execute(closure, context).TryAs<runtime::ClassInstance>();
+		auto r = rv_.get()->Execute(closure, context);
+		o->Fields()[field_name_] = r;
+		return	o->Fields().at(field_name_);
+
+		//	return {};
 	}
 
 	IfElse::IfElse(std::unique_ptr<Statement> /*condition*/, std::unique_ptr<Statement> /*if_body*/,

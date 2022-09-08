@@ -127,8 +127,9 @@ namespace ast {
 
 			assign_y.Execute(closure, context);
 			FieldAssignment assign_yz(
-				VariableValue{ vector<string>{"self"s, "y"s} }, "z"s,
-				make_unique<StringConst>(runtime::String("Hello, world! Hooray! Yes-yes!!!"s)));
+				VariableValue{ vector<string>{"self"s, "y"s} }
+				, "z"s
+				, make_unique<StringConst>(runtime::String("Hello, world! Hooray! Yes-yes!!!"s)));
 			{
 				ObjectHolder o = assign_yz.Execute(closure, context);
 				ASSERT(o);

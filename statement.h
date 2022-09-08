@@ -42,6 +42,7 @@ namespace ast {
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	private:
 		std::string name_;
+		std::vector<std::string> dotted_ids_;
 	};
 
 	// Присваивает переменной, имя которой задано в параметре var, значение выражения rv
@@ -64,7 +65,7 @@ namespace ast {
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	private:
 		VariableValue object_;
-		std::string name_;
+		std::string field_name_;
 		std::unique_ptr<Statement> rv_;
 	};
 
