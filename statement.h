@@ -8,8 +8,7 @@ namespace ast {
 
 	using Statement = runtime::Executable;
 
-	// Выражение, возвращающее значение типа T,
-	// используется как основа для создания констант
+	// Выражение, возвращающее значение типа T, используется как основа для создания констант
 	template <typename T>
 	class ValueStatement : public Statement {
 	public:
@@ -31,8 +30,7 @@ namespace ast {
 
 	/*
 	Вычисляет значение переменной либо цепочки вызовов полей объектов id1.id2.id3.
-	Например, выражение circle.center.x - цепочка вызовов полей объектов в инструкции:
-	x = circle.center.x
+	Например, выражение circle.center.x - цепочка вызовов полей объектов в инструкции: x = circle.center.x
 	*/
 	class VariableValue : public Statement {
 	public:
@@ -92,6 +90,9 @@ namespace ast {
 		// Во время выполнения команды print вывод должен осуществляться в поток, возвращаемый из
 		// context.GetOutputStream()
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		static std::string name_;
+		std::vector<std::unique_ptr<Statement>> args_;
 	};
 
 	// Вызывает метод object.method со списком параметров args

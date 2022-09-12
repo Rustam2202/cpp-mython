@@ -32,15 +32,22 @@ namespace ast {
 	}
 
 	VariableValue::VariableValue(std::vector<std::string> dotted_ids) :dotted_ids_(dotted_ids) {
-		name_ = dotted_ids.front();
-
-		runtime::Class cls{ dotted_ids[0],{dotted_ids[1]},nullptr };
-
+		name_ = dotted_ids.back();
 	}
 
 	ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
 		// Заглушка. Реализуйте метод самостоятельно
+		//if (!dotted_ids_.empty()) {
+		//	auto a = closure.at(dotted_ids_.front())
+		//		.TryAs<runtime::ClassInstance>()->Fields()[name_]
+		//		;
+
+		//	return a;
+		//	auto z = 0;
+		//}
+		//else 
 		if (closure.count(name_)) {
+
 			return closure.at(name_);
 		}
 		else {
@@ -48,26 +55,48 @@ namespace ast {
 		}
 	}
 
-	unique_ptr<Print> Print::Variable(const std::string& /*name*/) {
+	unique_ptr<Print> Print::Variable(const std::string& name) {
 		// Заглушка, реализуйте метод самостоятельно
+
+		name_ = name;
+		ValueStatement v(std::move(name_));
+		//Print p(make_unique<Statement>(std::move(v)));
+		//make_shared<Statement>(v);
+
+		auto a = make_unique<Statement>();
+
+		return	make_unique<Print>();
+
 		throw std::logic_error("Not implemented"s);
 	}
 
-	Print::Print(unique_ptr<Statement> /*argument*/) {
+	Print::Print(unique_ptr<Statement> argument) {
 		// Заглушка, реализуйте метод самостоятельно
+		args_.push_back(std::move(argument));
 	}
 
-	Print::Print(vector<unique_ptr<Statement>> /*args*/) {
+	Print::Print(vector<unique_ptr<Statement>> args) //:args_(std::move(args)) 
+	{
 		// Заглушка, реализуйте метод самостоятельно
+		args_ = std::move(args);
 	}
 
-	ObjectHolder Print::Execute(Closure& /*closure*/, Context& /*context*/) {
+	ObjectHolder Print::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
+		for (const auto& arg : args_) {
+			auto a = arg.get()->Execute(closure, context);
+			if (a) {
+				a.Get()->Print(context.GetOutputStream(), context);
+			}
+			else {
+				context.GetOutputStream() << "None";
+			}
+			context.GetOutputStream() << ' ';
+		}
 		return {};
 	}
 
-	MethodCall::MethodCall(std::unique_ptr<Statement> /*object*/, std::string /*method*/,
-		std::vector<std::unique_ptr<Statement>> /*args*/) {
+	MethodCall::MethodCall(std::unique_ptr<Statement> /*object*/, std::string /*method*/, std::vector<std::unique_ptr<Statement>> /*args*/) {
 		// Заглушка. Реализуйте метод самостоятельно
 	}
 
@@ -131,6 +160,7 @@ namespace ast {
 
 		auto o = object_.Execute(closure, context).TryAs<runtime::ClassInstance>();
 		auto r = rv_.get()->Execute(closure, context);
+
 		o->Fields()[field_name_] = r;
 		return	o->Fields().at(field_name_);
 
