@@ -180,6 +180,8 @@ namespace runtime {
 		// Возвращает константную ссылку на Closure, содержащую поля объекта
 		[[nodiscard]] const Closure& Fields() const;
 
+		const Class& GetClass() { return class_; }
+
 		//	std::vector<Method>& GetMethods() { return class_.GetMethods(); }
 
 	private:

@@ -35,37 +35,43 @@ namespace ast {
 		name_ = dotted_ids.back();
 	}
 
-	ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
+	ObjectHolder VariableValue::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		//if (!dotted_ids_.empty()) {
-		//	auto a = closure.at(dotted_ids_.front())
-		//		.TryAs<runtime::ClassInstance>()->Fields()[name_]
-		//		;
 
-		//	return a;
-		//	auto z = 0;
-		//}
-		//else 
-		if (closure.count(name_)) {
+		if (!dotted_ids_.empty()) {
+			auto c = closure.at(dotted_ids_.front()).TryAs<runtime::ClassInstance>();
+			const runtime::Class cls(name_, {}, &c->GetClass());
+			ObjectHolder obj;
+			obj.Own(std::move(cls));
+			closure[dotted_ids_[0]].TryAs<runtime::ClassInstance>()->Fields()[dotted_ids_[1]] = std::move(obj);
+			return closure.at(dotted_ids_[0]).TryAs<runtime::ClassInstance>()->Fields().at(dotted_ids_[1]);
+			//closure[name_] = ObjectHolder().Own(runtime::ClassInstance(cls));
+			//return closure.at(name_);
+		}
+		else
+			if (closure.count(name_)) {
 
-			return closure.at(name_);
-		}
-		else {
-			throw std::runtime_error("Not implemented"s);
-		}
+				return closure.at(name_);
+			}
+			else {
+				throw std::runtime_error("Not implemented"s);
+			}
+
+
+		return {};
 	}
 
 	unique_ptr<Print> Print::Variable(const std::string& name) {
 		// Заглушка, реализуйте метод самостоятельно
 
-		name_ = name;
-		ValueStatement v(std::move(name_));
+	//	name_ = name;
+	//	ValueStatement v(std::move(name_));
 		//Print p(make_unique<Statement>(std::move(v)));
 		//make_shared<Statement>(v);
 
-		auto a = make_unique<Statement>();
+	//	auto a = make_unique<Statement>();
 
-		return	make_unique<Print>();
+	//	return	make_unique<Print>();
 
 		throw std::logic_error("Not implemented"s);
 	}
@@ -75,10 +81,10 @@ namespace ast {
 		args_.push_back(std::move(argument));
 	}
 
-	Print::Print(vector<unique_ptr<Statement>> args) //:args_(std::move(args)) 
+	Print::Print(vector<unique_ptr<Statement>> args) :args_(std::move(args))
 	{
 		// Заглушка, реализуйте метод самостоятельно
-		args_ = std::move(args);
+		//args_ = std::move(args);
 	}
 
 	ObjectHolder Print::Execute(Closure& closure, Context& context) {
@@ -158,11 +164,11 @@ namespace ast {
 	ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
 
-		auto o = object_.Execute(closure, context).TryAs<runtime::ClassInstance>();
-		auto r = rv_.get()->Execute(closure, context);
+		runtime::ClassInstance* cls_inst = object_.Execute(closure, context).TryAs<runtime::ClassInstance>();
+		runtime::ObjectHolder rv = rv_.get()->Execute(closure, context);
 
-		o->Fields()[field_name_] = r;
-		return	o->Fields().at(field_name_);
+		cls_inst->Fields()[field_name_] = std::move(rv);
+		return cls_inst->Fields().at(field_name_);
 
 		//	return {};
 	}
@@ -202,17 +208,22 @@ namespace ast {
 		return {};
 	}
 
-	NewInstance::NewInstance(const runtime::Class& /*class_*/, std::vector<std::unique_ptr<Statement>> /*args*/) {
+	NewInstance::NewInstance(const runtime::Class& class_, std::vector<std::unique_ptr<Statement>> args) :cls_(class_) {
 		// Заглушка. Реализуйте метод самостоятельно
+
+
 	}
 
-	NewInstance::NewInstance(const runtime::Class& /*class_*/) {
+	NewInstance::NewInstance(const runtime::Class& class_) :cls_(class_) {
 		// Заглушка. Реализуйте метод самостоятельно
+
+
 	}
 
-	ObjectHolder NewInstance::Execute(Closure& /*closure*/, Context& /*context*/) {
+	ObjectHolder NewInstance::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		return {};
+		return ObjectHolder().Own(runtime::ClassInstance(cls_));
+		//return {};
 	}
 
 	MethodBody::MethodBody(std::unique_ptr<Statement>&& /*body*/) {

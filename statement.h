@@ -123,6 +123,8 @@ namespace ast {
 		NewInstance(const runtime::Class& class_, std::vector<std::unique_ptr<Statement>> args);
 		// Возвращает объект, содержащий значение типа ClassInstance
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		const runtime::Class& cls_;
 	};
 
 	// Базовый класс для унарных операций

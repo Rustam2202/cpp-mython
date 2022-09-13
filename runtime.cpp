@@ -115,7 +115,8 @@ namespace runtime {
 
 		}
 		else {
-			class_name_ = parent->class_name_;
+			//class_name_ = parent->class_name_;
+			class_name_ = name;
 		}
 		closure_["self"];
 		for (const auto& method : methods_) {
