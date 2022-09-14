@@ -115,7 +115,7 @@ namespace ast {
 			FieldAssignment assign_x(VariableValue{ "self"s }, "x"s, make_unique<NumericConst>(runtime::Number(57)));
 			FieldAssignment assign_y(VariableValue{ "self"s }, "y"s, make_unique<NewInstance>(empty));
 
-			Closure closure = { {"self"s, ObjectHolder::Share(object)} };
+			Closure closure = { {"self"s, ObjectHolder::Share(object)} }; // closure = object.closure_
 
 			{
 				ObjectHolder o = assign_x.Execute(closure, context);

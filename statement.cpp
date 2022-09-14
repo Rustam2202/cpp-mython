@@ -35,29 +35,36 @@ namespace ast {
 		name_ = dotted_ids.back();
 	}
 
-	ObjectHolder VariableValue::Execute(Closure& closure, Context& context) {
+	FieldAssignment::FieldAssignment(VariableValue object, std::string field_name, std::unique_ptr<Statement> rv) :object_(object) {
+		object_ = std::move(object);
+		field_name_ = field_name;
+		rv_ = std::move(rv);
+	}
+
+	ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
 
+		runtime::ClassInstance* cls = object_.Execute(closure, context).TryAs<runtime::ClassInstance>();
+		if (rv_) {
+			cls->Fields()[field_name_] = rv_.get()->Execute(closure, context);
+		}
+		return cls->Fields().at(field_name_);
+	}
+
+	ObjectHolder VariableValue::Execute(Closure& closure, Context& context) {
+		// Заглушка. Реализуйте метод самостоятельно
+		using namespace runtime;
+
 		if (!dotted_ids_.empty()) {
-			auto c = closure.at(dotted_ids_.front()).TryAs<runtime::ClassInstance>();
-			const runtime::Class cls(name_, {}, &c->GetClass());
-			ObjectHolder obj;
-			obj.Own(std::move(cls));
-			closure[dotted_ids_[0]].TryAs<runtime::ClassInstance>()->Fields()[dotted_ids_[1]] = std::move(obj);
-			return closure.at(dotted_ids_[0]).TryAs<runtime::ClassInstance>()->Fields().at(dotted_ids_[1]);
-			//closure[name_] = ObjectHolder().Own(runtime::ClassInstance(cls));
-			//return closure.at(name_);
+			return closure.at(dotted_ids_[0]).TryAs<ClassInstance>()->Fields().at(dotted_ids_[1]);
 		}
 		else
 			if (closure.count(name_)) {
-
 				return closure.at(name_);
 			}
 			else {
 				throw std::runtime_error("Not implemented"s);
 			}
-
-
 		return {};
 	}
 
@@ -155,23 +162,6 @@ namespace ast {
 		return {};
 	}
 
-	FieldAssignment::FieldAssignment(VariableValue object, std::string field_name, std::unique_ptr<Statement> rv) :object_(object) {
-		object_ = std::move(object);
-		field_name_ = field_name;
-		rv_ = std::move(rv);
-	}
-
-	ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
-		// Заглушка. Реализуйте метод самостоятельно
-
-		runtime::ClassInstance* cls_inst = object_.Execute(closure, context).TryAs<runtime::ClassInstance>();
-		runtime::ObjectHolder rv = rv_.get()->Execute(closure, context);
-
-		cls_inst->Fields()[field_name_] = std::move(rv);
-		return cls_inst->Fields().at(field_name_);
-
-		//	return {};
-	}
 
 	IfElse::IfElse(std::unique_ptr<Statement> /*condition*/, std::unique_ptr<Statement> /*if_body*/,
 		std::unique_ptr<Statement> /*else_body*/) {
