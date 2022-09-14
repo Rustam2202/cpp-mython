@@ -149,6 +149,7 @@ namespace ast {
 
 			Closure closure = { {"y"s, ObjectHolder::Own(runtime::Number(42))} };
 
+			/* auto = unque_ptr<Print> */
 			auto print_statement = Print::Variable("y"s);
 			print_statement->Execute(closure, context);
 

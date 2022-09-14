@@ -130,9 +130,13 @@ namespace ast {
 	// Базовый класс для унарных операций
 	class UnaryOperation : public Statement {
 	public:
-		explicit UnaryOperation(std::unique_ptr<Statement> /*argument*/) {
+		explicit UnaryOperation(std::unique_ptr<Statement> argument):argument_(std::move(argument)) {
 			// Реализуйте метод самостоятельно
 		}
+		std::unique_ptr<Statement>& GetArg() { return argument_; }
+
+	private:
+		std::unique_ptr<Statement> argument_;
 	};
 
 	// Операция str, возвращающая строковое значение своего аргумента

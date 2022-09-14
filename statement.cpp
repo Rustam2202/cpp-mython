@@ -14,6 +14,7 @@ namespace ast {
 	namespace {
 		const string ADD_METHOD = "__add__"s;
 		const string INIT_METHOD = "__init__"s;
+		const string STR_METHOD = "__str__"s;
 	}  // namespace
 
 	ObjectHolder Assignment::Execute(Closure& closure, Context& context) {
@@ -71,16 +72,9 @@ namespace ast {
 	unique_ptr<Print> Print::Variable(const std::string& name) {
 		// Заглушка, реализуйте метод самостоятельно
 
-	//	name_ = name;
-	//	ValueStatement v(std::move(name_));
-		//Print p(make_unique<Statement>(std::move(v)));
-		//make_shared<Statement>(v);
+		return make_unique<Print>(Print{ make_unique<VariableValue>(name) });
 
-	//	auto a = make_unique<Statement>();
-
-	//	return	make_unique<Print>();
-
-		throw std::logic_error("Not implemented"s);
+		//	throw std::logic_error("Not implemented"s);
 	}
 
 	Print::Print(unique_ptr<Statement> argument) {
@@ -88,24 +82,33 @@ namespace ast {
 		args_.push_back(std::move(argument));
 	}
 
-	Print::Print(vector<unique_ptr<Statement>> args) :args_(std::move(args))
-	{
+	Print::Print(vector<unique_ptr<Statement>> args) :args_(std::move(args)) {
 		// Заглушка, реализуйте метод самостоятельно
-		//args_ = std::move(args);
 	}
+
 
 	ObjectHolder Print::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		for (const auto& arg : args_) {
-			auto a = arg.get()->Execute(closure, context);
+		auto it = args_.begin();
+		while (true /*it != args_.end()*/) {
+			auto a = (*it).get()->Execute(closure, context);
 			if (a) {
 				a.Get()->Print(context.GetOutputStream(), context);
 			}
 			else {
 				context.GetOutputStream() << "None";
 			}
-			context.GetOutputStream() << ' ';
+
+			if (it == args_.end() - 1) {
+				context.GetOutputStream() << '\n';
+				break;
+			}
+			else {
+				context.GetOutputStream() << ' ';
+			}
+			it++;
 		}
+
 		return {};
 	}
 
@@ -118,9 +121,36 @@ namespace ast {
 		return {};
 	}
 
-	ObjectHolder Stringify::Execute(Closure& /*closure*/, Context& /*context*/) {
+	ObjectHolder Stringify::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		return {};
+
+		std::string str;
+
+		auto value = GetArg().get()->Execute(closure, context);
+		if (value.TryAs<runtime::Number>()) {
+			str = std::to_string(value.TryAs<runtime::Number>()->GetValue());
+		}
+		else if (value.TryAs<runtime::Bool>()) {
+			bool v = value.TryAs<runtime::Bool>()->GetValue();
+			v ? str = "True"s : str = "False"s;
+		}
+		else if (value.TryAs<runtime::ClassInstance>()) {
+			auto cls = value.TryAs<runtime::ClassInstance>();
+			if (cls->HasMethod(STR_METHOD, 0)) {
+				ObjectHolder c = cls->Call(STR_METHOD, {}, context);
+				str = std::to_string(c.TryAs<runtime::Number>()->GetValue());
+			}
+			else {
+				return this->GetArg().get()->Execute(closure, context);
+			}
+		}
+		else if (!value) {
+			str = "None"s;
+		}
+		else {
+			str = value.TryAs<runtime::String>()->GetValue();
+		}
+		return ObjectHolder::Own(runtime::String(str));
 	}
 
 	ObjectHolder Add::Execute(Closure& /*closure*/, Context& /*context*/) {
@@ -163,8 +193,7 @@ namespace ast {
 	}
 
 
-	IfElse::IfElse(std::unique_ptr<Statement> /*condition*/, std::unique_ptr<Statement> /*if_body*/,
-		std::unique_ptr<Statement> /*else_body*/) {
+	IfElse::IfElse(std::unique_ptr<Statement> /*condition*/, std::unique_ptr<Statement> /*if_body*/, std::unique_ptr<Statement> /*else_body*/) {
 		// Реализуйте метод самостоятельно
 	}
 
