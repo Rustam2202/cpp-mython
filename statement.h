@@ -3,6 +3,7 @@
 #include "runtime.h"
 
 #include <functional>
+#include <iostream> //
 
 namespace ast {
 
@@ -130,7 +131,7 @@ namespace ast {
 	// Базовый класс для унарных операций
 	class UnaryOperation : public Statement {
 	public:
-		explicit UnaryOperation(std::unique_ptr<Statement> argument):argument_(std::move(argument)) {
+		explicit UnaryOperation(std::unique_ptr<Statement> argument) :argument_(std::move(argument)) {
 			// Реализуйте метод самостоятельно
 		}
 		std::unique_ptr<Statement>& GetArg() { return argument_; }
@@ -149,9 +150,16 @@ namespace ast {
 	// Родительский класс Бинарная операция с аргументами lhs и rhs
 	class BinaryOperation : public Statement {
 	public:
-		BinaryOperation(std::unique_ptr<Statement> /*lhs*/, std::unique_ptr<Statement> /*rhs*/) {
+		BinaryOperation(std::unique_ptr<Statement> lhs, std::unique_ptr<Statement> rhs) :lhs_(std::move(lhs)), rhs_(std::move(rhs)) {
 			// Реализуйте метод самостоятельно
 		}
+
+		std::unique_ptr<Statement>& GetLhs() { return lhs_; }
+		std::unique_ptr<Statement>& GetRhs() { return rhs_; }
+
+	private:
+		std::unique_ptr<Statement> lhs_;
+		std::unique_ptr<Statement> rhs_;
 	};
 
 	// Возвращает результат операции + над аргументами lhs и rhs
@@ -205,8 +213,7 @@ namespace ast {
 	class Or : public BinaryOperation {
 	public:
 		using BinaryOperation::BinaryOperation;
-		// Значение аргумента rhs вычисляется, только если значение lhs
-		// после приведения к Bool равно False
+		// Значение аргумента rhs вычисляется, только если значение lhs после приведения к Bool равно False
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	};
 
@@ -214,8 +221,7 @@ namespace ast {
 	class And : public BinaryOperation {
 	public:
 		using BinaryOperation::BinaryOperation;
-		// Значение аргумента rhs вычисляется, только если значение lhs
-		// после приведения к Bool равно True
+		// Значение аргумента rhs вычисляется, только если значение lhs после приведения к Bool равно True
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	};
 
@@ -231,17 +237,24 @@ namespace ast {
 	public:
 		// Конструирует Compound из нескольких инструкций типа unique_ptr<Statement>
 		template <typename... Args>
-		explicit Compound(Args&&... /*args*/) {
+		explicit Compound(Args&&... args) {
 			// Реализуйте метод самостоятельно
+			auto args_list = std::initializer_list<std::unique_ptr<Assignment>>{ std::move(args)... };
+			for (auto& arg : args_list) {
+				args_.push_back(std::move(*arg.get()));
+			}
 		}
 
 		// Добавляет очередную инструкцию в конец составной инструкции
-		void AddStatement(std::unique_ptr<Statement> /*stmt*/) {
+		void AddStatement(std::unique_ptr<Statement> stmt) {
 			// Реализуйте метод самостоятельно
 		}
 
 		// Последовательно выполняет добавленные инструкции. Возвращает None
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+
+	private:
+		std::vector<Assignment> args_;
 	};
 
 	// Тело метода. Как правило, содержит составную инструкцию
