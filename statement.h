@@ -39,9 +39,11 @@ namespace ast {
 		explicit VariableValue(std::vector<std::string> dotted_ids);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+
 	private:
 		std::string name_;
 		std::vector<std::string> dotted_ids_;
+		std::shared_ptr<Statement> value_ = nullptr;
 	};
 
 	// Присваивает переменной, имя которой задано в параметре var, значение выражения rv
@@ -50,6 +52,9 @@ namespace ast {
 		Assignment(std::string var, std::unique_ptr<Statement> rv);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+
+		//const std::string& GetName() { return name_; }
+		//const std::unique_ptr<Statement>& GetValue() { return rv_; }
 
 	private:
 		std::string name_;
@@ -239,15 +244,53 @@ namespace ast {
 		template <typename... Args>
 		explicit Compound(Args&&... args) {
 			// Реализуйте метод самостоятельно
+			runtime::DummyContext context;
 			auto args_list = std::initializer_list<std::unique_ptr<Assignment>>{ std::move(args)... };
 			for (auto& arg : args_list) {
 				args_.push_back(std::move(*arg.get()));
+				//arg.get()->Execute(closure_, context);
 			}
 		}
 
 		// Добавляет очередную инструкцию в конец составной инструкции
 		void AddStatement(std::unique_ptr<Statement> stmt) {
 			// Реализуйте метод самостоятельно
+			runtime::Closure closure;
+			runtime::DummyContext context;
+			std::string result_name;
+			runtime::ObjectHolder result_value;
+
+			runtime::Executable* s = stmt.get();
+			//s->Execute(closure, context);
+
+			auto val = s->Execute(closure_, context);
+			//auto back=closure_;
+
+			for (const auto& c : closure) {
+				auto name = c.first;
+				auto value = c.second;
+				if (value.TryAs<runtime::Number>()) {
+					auto numb = value.TryAs<runtime::Number>();
+					auto numb_ptr = std::make_unique<NumericConst>(*numb);
+					Assignment result(name, std::move(numb_ptr));
+					args_.push_back(std::move(result));
+					closure_[name] = runtime::ObjectHolder::Own(runtime::Number(*numb));
+				}
+				else if (value.TryAs<runtime::String>()) {
+					auto str = value.TryAs<runtime::String>();
+					auto str_ptr = std::make_unique<StringConst>(*str);
+					Assignment result(name, std::move(str_ptr));
+					args_.push_back(std::move(result));
+					closure_[name] = runtime::ObjectHolder::Own(runtime::String(*str));
+				}
+				else if (value.TryAs < runtime::Bool >()) {
+					auto bl = value.TryAs<runtime::Bool>();
+					auto bl_ptr = std::make_unique<BoolConst>(*bl);
+					Assignment result(name, std::move(bl_ptr));
+					args_.push_back(std::move(result));
+					//closure_[name] = runtime::ObjectHolder::Own(runtime::Bool(*bl_ptr));
+				}
+			}
 		}
 
 		// Последовательно выполняет добавленные инструкции. Возвращает None
@@ -255,6 +298,7 @@ namespace ast {
 
 	private:
 		std::vector<Assignment> args_;
+		runtime::Closure closure_;
 	};
 
 	// Тело метода. Как правило, содержит составную инструкцию

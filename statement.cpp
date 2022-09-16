@@ -20,6 +20,7 @@ namespace ast {
 	ObjectHolder Assignment::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
 		closure[name_] = rv_.get()->Execute(closure, context);
+		//closure[name_] = std::move(rv_.get()->Execute(closure, context));
 		return closure.at(name_);
 	}
 
@@ -36,10 +37,12 @@ namespace ast {
 		name_ = dotted_ids.back();
 	}
 
-	FieldAssignment::FieldAssignment(VariableValue object, std::string field_name, std::unique_ptr<Statement> rv) :object_(object) {
-		object_ = std::move(object);
-		field_name_ = field_name;
-		rv_ = std::move(rv);
+	FieldAssignment::FieldAssignment(VariableValue object, std::string field_name, std::unique_ptr<Statement> rv)
+		:object_(object), field_name_(field_name), rv_(std::move(rv))
+	{
+		//object_ = std::move(object);
+		//field_name_ = field_name;
+		//rv_ = std::move(rv);
 	}
 
 	ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
@@ -56,6 +59,10 @@ namespace ast {
 		// Заглушка. Реализуйте метод самостоятельно
 		using namespace runtime;
 
+		if (dotted_ids_.size() == 1) {
+			return closure[dotted_ids_[0]];
+			//return closure.at(name_);
+		}
 		if (!dotted_ids_.empty()) {
 			return closure.at(dotted_ids_[0]).TryAs<ClassInstance>()->Fields().at(dotted_ids_[1]);
 		}
@@ -234,6 +241,7 @@ namespace ast {
 		for (auto& arg : args_) {
 			arg.Execute(closure, context);
 		}
+		//closure = closure_;
 		return ObjectHolder::None();
 	}
 
