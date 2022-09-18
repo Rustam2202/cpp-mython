@@ -255,7 +255,7 @@ namespace ast {
 		// Добавляет очередную инструкцию в конец составной инструкции
 		void AddStatement(std::unique_ptr<Statement> stmt) {
 			// Реализуйте метод самостоятельно
-			runtime::Closure closure;
+			runtime::Closure closure_temp;
 			runtime::DummyContext context;
 			std::string result_name;
 			runtime::ObjectHolder result_value;
@@ -263,12 +263,18 @@ namespace ast {
 			runtime::Executable* s = stmt.get();
 			//s->Execute(closure, context);
 
-			auto val = s->Execute(closure_, context);
-			//auto back=closure_;
+			auto val= s->Execute(closure_, context);
 
-			for (const auto& c : closure) {
-				auto name = c.first;
-				auto value = c.second;
+			if (!val) {
+
+			}
+			else {
+
+				//s->Execute(closure_temp, context);
+				auto last_added = --closure_.end();
+
+				const std::string& name = (*last_added).first;
+				const runtime::ObjectHolder& value = (*last_added).second;
 				if (value.TryAs<runtime::Number>()) {
 					auto numb = value.TryAs<runtime::Number>();
 					auto numb_ptr = std::make_unique<NumericConst>(*numb);
@@ -283,14 +289,33 @@ namespace ast {
 					args_.push_back(std::move(result));
 					closure_[name] = runtime::ObjectHolder::Own(runtime::String(*str));
 				}
-				else if (value.TryAs < runtime::Bool >()) {
-					auto bl = value.TryAs<runtime::Bool>();
-					auto bl_ptr = std::make_unique<BoolConst>(*bl);
-					Assignment result(name, std::move(bl_ptr));
-					args_.push_back(std::move(result));
-					//closure_[name] = runtime::ObjectHolder::Own(runtime::Bool(*bl_ptr));
-				}
+				else if (value.TryAs < runtime::Bool >()) {}
 			}
+			//for (const auto& c : closure_temp) {
+			//	auto name = c.first;
+			//	auto value = c.second;
+			//	if (value.TryAs<runtime::Number>()) {
+			//		auto numb = value.TryAs<runtime::Number>();
+			//		auto numb_ptr = std::make_unique<NumericConst>(*numb);
+			//		Assignment result(name, std::move(numb_ptr));
+			//		args_.push_back(std::move(result));
+			//		closure_[name] = runtime::ObjectHolder::Own(runtime::Number(*numb));
+			//	}
+			//	else if (value.TryAs<runtime::String>()) {
+			//		auto str = value.TryAs<runtime::String>();
+			//		auto str_ptr = std::make_unique<StringConst>(*str);
+			//		Assignment result(name, std::move(str_ptr));
+			//		args_.push_back(std::move(result));
+			//		closure_[name] = runtime::ObjectHolder::Own(runtime::String(*str));
+			//	}
+			//	else if (value.TryAs < runtime::Bool >()) {
+			//		auto bl = value.TryAs<runtime::Bool>();
+			//		auto bl_ptr = std::make_unique<BoolConst>(*bl);
+			//		Assignment result(name, std::move(bl_ptr));
+			//		args_.push_back(std::move(result));
+			//		//closure_[name] = runtime::ObjectHolder::Own(runtime::Bool(*bl_ptr));
+			//	}
+			//}
 		}
 
 		// Последовательно выполняет добавленные инструкции. Возвращает None
