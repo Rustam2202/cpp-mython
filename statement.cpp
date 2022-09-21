@@ -97,10 +97,11 @@ namespace ast {
 	ObjectHolder Print::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
 		auto it = args_.begin();
+		ObjectHolder result;
 		while (true) {
-			auto a = (*it).get()->Execute(closure, context);
-			if (a) {
-				a.Get()->Print(context.GetOutputStream(), context);
+			result = (*it).get()->Execute(closure, context);
+			if (result) {
+				result.Get()->Print(context.GetOutputStream(), context);
 			}
 			else {
 				context.GetOutputStream() << "None";
@@ -116,7 +117,7 @@ namespace ast {
 			it++;
 		}
 
-		return {};
+		return result;
 	}
 
 	MethodCall::MethodCall(std::unique_ptr<Statement> /*object*/, std::string /*method*/, std::vector<std::unique_ptr<Statement>> /*args*/) {
