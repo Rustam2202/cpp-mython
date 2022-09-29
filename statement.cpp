@@ -98,6 +98,7 @@ namespace ast {
 		// Заглушка. Реализуйте метод самостоятельно
 		auto it = args_.begin();
 		ObjectHolder result;
+
 		while (true) {
 			result = (*it).get()->Execute(closure, context);
 			if (result) {
@@ -239,8 +240,11 @@ namespace ast {
 	ObjectHolder Compound::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
 
-		for (auto& arg : args_) {
+		/*for (auto& arg : args_) {
 			arg.Execute(closure, context);
+		}*/
+		for (auto arg : args_2_) {
+			arg->Execute(closure, context);
 		}
 		//closure = closure_;
 		return ObjectHolder::None();
