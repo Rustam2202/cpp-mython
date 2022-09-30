@@ -236,7 +236,7 @@ namespace ast {
 		using UnaryOperation::UnaryOperation;
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	};
-
+	
 	// Составная инструкция (например: тело метода, содержимое ветки if, либо else)
 	class Compound : public Statement {
 	public:
@@ -244,62 +244,24 @@ namespace ast {
 		template <typename... Args>
 		explicit Compound(Args&&... args) {
 			// Реализуйте метод самостоятельно
-			//runtime::DummyContext context;
-			auto args_list = std::initializer_list<std::unique_ptr<Assignment>>{ std::move(args)... };
-			for (auto& arg : args_list) {
-				//args_.push_back(std::move(*arg.get()));
-				args_3_.push_back(std::move(arg));
-				args_2_.push_back(std::move(arg.get()));
-				//arg.get()->Execute(closure_, context);
-			}
+			auto f = [&](std::unique_ptr<Statement> arg) {
+				args_.push_back(std::move(arg));
+			};
+
+			(..., f(std::forward<Args>(args)));
 		}
 
 		// Добавляет очередную инструкцию в конец составной инструкции
 		void AddStatement(std::unique_ptr<Statement> stmt) {
 			// Реализуйте метод самостоятельно
-			runtime::Closure closure_temp;
-			runtime::DummyContext context;
-			std::string result_name;
-			runtime::ObjectHolder result_value;
-
-			args_2_.push_back(stmt.get());
-
-			runtime::Executable* s = stmt.get();
-			//s->Execute(closure, context);
-
-			auto val = s->Execute(closure_, context);
-
-			//{
-			//	auto last_added = --closure_.end();
-			//	const std::string& name = (*last_added).first;
-			//	const runtime::ObjectHolder& value = (*last_added).second;
-			//	if (value.TryAs<runtime::Number>()) {
-			//		auto numb = value.TryAs<runtime::Number>();
-			//		auto numb_ptr = std::make_unique<NumericConst>(*numb);
-			//		Assignment result(name, std::move(numb_ptr));
-			//		args_.push_back(std::move(result));
-			//		closure_[name] = runtime::ObjectHolder::Own(runtime::Number(*numb));
-			//	}
-			//	else if (value.TryAs<runtime::String>()) {
-			//		auto str = value.TryAs<runtime::String>();
-			//		auto str_ptr = std::make_unique<StringConst>(*str);
-			//		Assignment result(name, std::move(str_ptr));
-			//		args_.push_back(std::move(result));
-			//		closure_[name] = runtime::ObjectHolder::Own(runtime::String(*str));
-			//	}
-			//	else if (value.TryAs < runtime::Bool >()) {}
-			//}
+			args_.push_back(std::move(stmt));
 		}
 
 		// Последовательно выполняет добавленные инструкции. Возвращает None
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 
 	private:
-		std::vector<Assignment> args_;
-		std::vector<Statement*> args_2_;
-		std::vector<std::unique_ptr<Statement>> args_3_;
-		runtime::Closure closure_;
-		//runtime::SimpleContext context_;
+		std::vector<std::unique_ptr<Statement>> args_;
 	};
 
 	// Тело метода. Как правило, содержит составную инструкцию
@@ -334,6 +296,8 @@ namespace ast {
 		// Создаёт внутри closure новый объект, совпадающий с именем класса и значением, переданным в
 		// конструктор
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		runtime::ClassInstance class_;
 	};
 
 	// Инструкция if <condition> <if_body> else <else_body>

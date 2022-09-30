@@ -118,7 +118,7 @@ namespace ast {
 			it++;
 		}
 
-		return result;
+		return ObjectHolder::None();
 	}
 
 	MethodCall::MethodCall(std::unique_ptr<Statement> /*object*/, std::string /*method*/, std::vector<std::unique_ptr<Statement>> /*args*/) {
@@ -243,7 +243,7 @@ namespace ast {
 		/*for (auto& arg : args_) {
 			arg.Execute(closure, context);
 		}*/
-		for (auto arg : args_2_) {
+		for (auto& arg : args_) {
 			arg->Execute(closure, context);
 		}
 		//closure = closure_;
@@ -255,12 +255,17 @@ namespace ast {
 		return {};
 	}
 
-	ClassDefinition::ClassDefinition(ObjectHolder /*cls*/) {
+	ClassDefinition::ClassDefinition(ObjectHolder cls) 
+		:class_(std::move(* cls.TryAs<runtime::Class>()))
+	{
 		// Заглушка. Реализуйте метод самостоятельно
+	//	cls.TryAs<runtime::Class>();
 	}
 
-	ObjectHolder ClassDefinition::Execute(Closure& /*closure*/, Context& /*context*/) {
+	ObjectHolder ClassDefinition::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
+		
+	//	class_.Fields();
 		return {};
 	}
 
