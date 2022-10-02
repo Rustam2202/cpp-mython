@@ -94,22 +94,20 @@ namespace ast {
 		// Во всех других случаях выбрасываем исключение
 		//throw std::runtime_error("No arguments specified for VariableValue::Execute()"s);
 
-		if (closure.count(name_)) {
-			auto result = closure.at(name_);
-			if (dotted_ids_.size() > 0) {
-				if (auto obj = result.TryAs<runtime::ClassInstance>()) {
-					return VariableValue(dotted_ids_).Execute(obj->Fields(), context);
-				}
-				else {
-					throw std::runtime_error("Variable " + name_ + " is not class"s);
-				}
+		if (dotted_ids_.size() == 1) {
+			return closure[dotted_ids_[0]];
+			//return closure.at(name_);
+		}
+		if (!dotted_ids_.empty()) {
+			return closure.at(dotted_ids_[0]).TryAs<ClassInstance>()->Fields().at(dotted_ids_[1]);
+		}
+		else
+			if (closure.count(name_)) {
+				return closure.at(name_);
 			}
-			return result;
-		}
-		else {
-			throw std::runtime_error("Variable "s + name_ + " not found"s);
-		}
-
+			else {
+				throw std::runtime_error("Not implemented"s);
+			}
 		return {};
 	}
 
@@ -279,16 +277,23 @@ namespace ast {
 		return ObjectHolder::None();
 	}
 
-	ObjectHolder Return::Execute(Closure& closure, Context& context) {
-		throw statement_.get()->Execute(closure, context);
+	ObjectHolder Return::Execute(Closure& /*closure*/, Context& /*context*/) {
+		// Заглушка. Реализуйте метод самостоятельно
+		return {};
 	}
 
-	ClassDefinition::ClassDefinition(ObjectHolder cls) :class_(std::move(cls)) {	}
+	ClassDefinition::ClassDefinition(ObjectHolder cls) 
+		:class_(std::move(* cls.TryAs<runtime::Class>()))
+	{
+		// Заглушка. Реализуйте метод самостоятельно
+	//	cls.TryAs<runtime::Class>();
+	}
 
 	ObjectHolder ClassDefinition::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		closure[class_.TryAs<runtime::Class>()->GetName()] = class_;
-		return ObjectHolder::None();
+		
+	//	class_.Fields();
+		return {};
 	}
 
 
@@ -391,16 +396,22 @@ namespace ast {
 
 	ObjectHolder MethodBody::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		try {
-			body_->Execute(closure, context);
-			return runtime::ObjectHolder::None();
-		}
-		catch (runtime::ObjectHolder& result) {
-			return result;
-		}
-		catch (...) {
-			throw;
-		}
+
+
+	}
+
+	ObjectHolder NewInstance::Execute(Closure& closure, Context& context) {
+		// Заглушка. Реализуйте метод самостоятельно
+		return ObjectHolder().Own(runtime::ClassInstance(cls_));
+		//return {};
+	}
+
+	MethodBody::MethodBody(std::unique_ptr<Statement>&& /*body*/) {
+	}
+
+	ObjectHolder MethodBody::Execute(Closure& /*closure*/, Context& /*context*/) {
+		// Заглушка. Реализуйте метод самостоятельно
+		return {};
 	}
 
 }  // namespace ast
