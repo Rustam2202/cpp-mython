@@ -236,7 +236,7 @@ namespace ast {
 		using UnaryOperation::UnaryOperation;
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	};
-	
+
 	// Составная инструкция (например: тело метода, содержимое ветки if, либо else)
 	class Compound : public Statement {
 	public:
@@ -267,24 +267,28 @@ namespace ast {
 	// Тело метода. Как правило, содержит составную инструкцию
 	class MethodBody : public Statement {
 	public:
-		explicit MethodBody(std::unique_ptr<Statement>&& body);
+		explicit MethodBody(std::unique_ptr<Statement>&& body) : body_(std::move(body)){}
 
 		// Вычисляет инструкцию, переданную в качестве body.
 		// Если внутри body была выполнена инструкция return, возвращает результат return
 		// В противном случае возвращает None
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		std::unique_ptr<Statement> body_;
 	};
 
 	// Выполняет инструкцию return с выражением statement
 	class Return : public Statement {
 	public:
-		explicit Return(std::unique_ptr<Statement> /*statement*/) {
+		explicit Return(std::unique_ptr<Statement> statement) :statement_(std::move(statement)) {
 			// Реализуйте метод самостоятельно
 		}
 
 		// Останавливает выполнение текущего метода. После выполнения инструкции return метод,
 		// внутри которого она была исполнена, должен вернуть результат вычисления выражения statement.
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		std::unique_ptr<Statement> statement_;
 	};
 
 	// Объявляет класс
@@ -297,7 +301,7 @@ namespace ast {
 		// конструктор
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	private:
-		runtime::ClassInstance class_;
+		runtime::ObjectHolder class_;
 	};
 
 	// Инструкция if <condition> <if_body> else <else_body>

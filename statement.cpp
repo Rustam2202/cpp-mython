@@ -33,8 +33,11 @@ namespace ast {
 		name_ = var_name;
 	}
 
-	VariableValue::VariableValue(std::vector<std::string> dotted_ids) :dotted_ids_(dotted_ids) {
-		name_ = dotted_ids.back();
+	VariableValue::VariableValue(std::vector<std::string> dotted_ids)
+		//:dotted_ids_(dotted_ids) 
+	{
+		name_ = dotted_ids.front();
+		dotted_ids_ = { dotted_ids.begin() + 1,dotted_ids.end() };
 	}
 
 	FieldAssignment::FieldAssignment(VariableValue object, std::string field_name, std::unique_ptr<Statement> rv)
@@ -50,29 +53,48 @@ namespace ast {
 
 		runtime::ClassInstance* cls = object_.Execute(closure, context).TryAs<runtime::ClassInstance>();
 		if (rv_) {
-			cls->Fields()[field_name_] = rv_.get()->Execute(closure, context);
+			return cls->Fields()[field_name_] = rv_.get()->Execute(closure, context);
 		}
-		return cls->Fields().at(field_name_);
+		else {
+			throw runtime_error("Object is not class"s);
+		}
+		//return cls->Fields().at(field_name_);
 	}
 
 	ObjectHolder VariableValue::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
 		using namespace runtime;
 
-		if (dotted_ids_.size() == 1) {
-			return closure[dotted_ids_[0]];
-			//return closure.at(name_);
-		}
-		if (!dotted_ids_.empty()) {
-			return closure.at(dotted_ids_[0]).TryAs<ClassInstance>()->Fields().at(dotted_ids_[1]);
-		}
-		else
-			if (closure.count(name_)) {
-				return closure.at(name_);
+		if (closure.count(name_)) {
+			auto result = closure.at(name_);
+			if (dotted_ids_.size() > 0) {
+				if (auto obj = result.TryAs<runtime::ClassInstance>()) {
+					return VariableValue(dotted_ids_).Execute(obj->Fields(), context);
+				}
+				else {
+					throw std::runtime_error("Variable " + name_ + " is not class"s);
+				}
 			}
-			else {
-				throw std::runtime_error("Not implemented"s);
-			}
+			return result;
+		}
+		else {
+			throw std::runtime_error("Variable "s + name_ + " not found"s);
+		}
+
+		//if (dotted_ids_.size() == 1) {
+		//	return closure[dotted_ids_[0]];
+		//	//return closure.at(name_);
+		//}
+		//if (!dotted_ids_.empty()) {
+		//	return closure.at(dotted_ids_[0]).TryAs<ClassInstance>()->Fields().at(dotted_ids_[1]);
+		//}
+		//else
+		//	if (closure.count(name_)) {
+		//		return closure.at(name_);
+		//	}
+		//	else {
+		//		throw std::runtime_error("Not implemented"s);
+		//	}
 		return {};
 	}
 
@@ -134,9 +156,18 @@ namespace ast {
 		// Заглушка. Реализуйте метод самостоятельно
 
 		std::string str;
+		
+		ObjectHolder value = GetArg().get()->Execute(closure, context);
+		if (value) {
+			std::ostringstream os;
+			value.Get()->Print(os, context);
+			return ObjectHolder::Own(runtime::String(os.str()));
+		}
+		else {
+			return ObjectHolder::Own(runtime::String("None"s));
+		}
 
-		auto value = GetArg().get()->Execute(closure, context);
-		if (value.TryAs<runtime::Number>()) {
+		/*if (value.TryAs<runtime::Number>()) {
 			str = std::to_string(value.TryAs<runtime::Number>()->GetValue());
 		}
 		else if (value.TryAs<runtime::Bool>()) {
@@ -159,7 +190,7 @@ namespace ast {
 		else {
 			str = value.TryAs<runtime::String>()->GetValue();
 		}
-		return ObjectHolder::Own(runtime::String(str));
+		return ObjectHolder::Own(runtime::String(str));*/
 	}
 
 	ObjectHolder Add::Execute(Closure& closure, Context& context) {
@@ -240,23 +271,20 @@ namespace ast {
 	ObjectHolder Compound::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
 
-		/*for (auto& arg : args_) {
-			arg.Execute(closure, context);
-		}*/
 		for (auto& arg : args_) {
 			arg->Execute(closure, context);
 		}
-		//closure = closure_;
 		return ObjectHolder::None();
 	}
 
-	ObjectHolder Return::Execute(Closure& /*closure*/, Context& /*context*/) {
+	ObjectHolder Return::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		return {};
+		throw statement_.get()->Execute(closure, context);
+		//return {};
 	}
 
-	ClassDefinition::ClassDefinition(ObjectHolder cls) 
-		:class_(std::move(* cls.TryAs<runtime::Class>()))
+	ClassDefinition::ClassDefinition(ObjectHolder cls)
+		:class_(std::move(cls))
 	{
 		// Заглушка. Реализуйте метод самостоятельно
 	//	cls.TryAs<runtime::Class>();
@@ -264,9 +292,8 @@ namespace ast {
 
 	ObjectHolder ClassDefinition::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		
-	//	class_.Fields();
-		return {};
+		closure[class_.TryAs<runtime::Class>()->GetName()] = class_;
+		return ObjectHolder::None();
 	}
 
 
@@ -366,11 +393,20 @@ namespace ast {
 		//return {};
 	}
 
-	MethodBody::MethodBody(std::unique_ptr<Statement>&& /*body*/) {
-	}
+	//MethodBody::MethodBody(std::unique_ptr<Statement>&& /*body*/) {	}
 
-	ObjectHolder MethodBody::Execute(Closure& /*closure*/, Context& /*context*/) {
+	ObjectHolder MethodBody::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
+		try {
+			body_->Execute(closure, context);
+			return runtime::ObjectHolder::None();
+		}
+		catch (runtime::ObjectHolder& result) {
+			return result;
+		}
+		catch (...) {
+			throw;
+		}
 		return {};
 	}
 
