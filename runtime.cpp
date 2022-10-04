@@ -108,23 +108,24 @@ namespace runtime {
 		}
 	}
 
-	Class::Class(std::string name, std::vector<Method> methods, const Class* parent) {
-		parent_class_ = const_cast<Class*>(parent);
-		methods_ = std::move(methods);
-		if (parent_class_ == nullptr) {
-			class_name_ = name;
-
-		}
-		else {
-			//class_name_ = parent->class_name_;
-			class_name_ = name;
-		}
-		closure_["self"];
-		for (const auto& method : methods_) {
-			for (const auto& arg : method.formal_params) {
-				closure_[arg];
-			}
-		}
+	Class::Class(std::string name, std::vector<Method> methods, const Class* parent)
+		: class_name_(std::move(name)), methods_(std::move(methods)), parent_class_(parent)
+	{
+		//parent_class_ = const_cast<Class*>(parent);
+		//methods_ = std::move(methods);
+		//if (parent_class_ == nullptr) {
+		//	class_name_ = name;
+		//}
+		//else {
+		//	//class_name_ = parent->class_name_;
+		//	class_name_ = name;
+		//}
+		//closure_["self"];
+		//for (const auto& method : methods_) {
+		//	for (const auto& arg : method.formal_params) {
+		//		closure_[arg];
+		//	}
+		//}
 	}
 
 	const Method* Class::GetMethod(const std::string& name) const {

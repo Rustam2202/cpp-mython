@@ -148,7 +148,7 @@ namespace runtime {
 	private:
 		std::string class_name_;
 		std::vector<Method> methods_;
-		Class* parent_class_ = nullptr;
+		const Class* parent_class_ = nullptr;
 		Closure closure_;
 	};
 
