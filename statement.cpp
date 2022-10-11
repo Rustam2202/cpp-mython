@@ -289,7 +289,7 @@ namespace ast {
 	//	cls.TryAs<runtime::Class>();
 	}
 
-	ObjectHolder ClassDefinition::Execute(Closure& closure, Context& context) {
+	ObjectHolder ClassDefinition::Execute(Closure& closure, Context& /*context*/) {
 		// Заглушка. Реализуйте метод самостоятельно
 		
 	//	class_.Fields();
@@ -309,7 +309,13 @@ namespace ast {
 	ObjectHolder Or::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
 
-		ObjectHolder left = GetLhs().get()->Execute(closure, context);
+		if (runtime::IsTrue(GetLhs()->Execute(closure, context)))
+		{
+			return ObjectHolder::Own(runtime::Bool(true));
+		}
+		return ObjectHolder::Own(runtime::Bool(runtime::IsTrue(GetRhs()->Execute(closure, context))));
+
+		/*ObjectHolder left = GetLhs().get()->Execute(closure, context);
 		ObjectHolder right = GetRhs().get()->Execute(closure, context);
 		bool left_bool = false;
 		bool right_bool = false;
@@ -320,7 +326,8 @@ namespace ast {
 				return right;
 			}
 			return left;
-		}
+		}*/
+
 		/*else if (left.TryAs<runtime::Number>() && right.TryAs<runtime::Number>()) {
 			if (left_bool = left.TryAs<runtime::Number>()->GetValue() == false) {
 				right_bool = right.TryAs<runtime::Number>()->GetValue();
@@ -335,15 +342,21 @@ namespace ast {
 			}
 			return left;
 		}*/
-		else {
+		/*else {
 			throw std::runtime_error("Not implemented"s);
-		}
+		}*/
 	}
 
 	ObjectHolder And::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
+		if (runtime::IsTrue(GetLhs()->Execute(closure, context)))
+		{
+			return ObjectHolder::Own(runtime::Bool(runtime::IsTrue
+			(GetRhs()->Execute(closure, context))));
+		}
+		return ObjectHolder::Own(runtime::Bool(false));
 
-		ObjectHolder left = GetLhs().get()->Execute(closure, context);
+		/*ObjectHolder left = GetLhs().get()->Execute(closure, context);
 		ObjectHolder right = GetRhs().get()->Execute(closure, context);
 		bool left_bool = false;
 		bool right_bool = false;
@@ -357,7 +370,7 @@ namespace ast {
 		}
 		else {
 			throw std::runtime_error("Not implemented"s);
-		}
+		}*/
 	}
 
 	ObjectHolder Not::Execute(Closure& closure, Context& context) {
@@ -402,8 +415,18 @@ namespace ast {
 
 	ObjectHolder NewInstance::Execute(Closure& closure, Context& context) {
 		// Заглушка. Реализуйте метод самостоятельно
-		return ObjectHolder().Own(runtime::ClassInstance(cls_));
+	//	return ObjectHolder().Own(runtime::ClassInstance(cls_));
 		//return {};
+
+		if (cls_.HasMethod(INIT_METHOD, args_.size())) {
+			std::vector<runtime::ObjectHolder> actual_args;
+			for (auto& arg : args_) {
+				actual_args.push_back(arg->Execute(closure, context));
+			}
+			
+			cls_.Call(INIT_METHOD, actual_args, context);
+		}
+		return runtime::ObjectHolder::Share(cls_);
 	}
 
 	MethodBody::MethodBody(std::unique_ptr<Statement>&& /*body*/) {

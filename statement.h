@@ -249,11 +249,13 @@ namespace ast {
 		template <typename... Args>
 		explicit Compound(Args&&... args) {
 			// Реализуйте метод самостоятельно
-			auto f = [&](std::unique_ptr<Statement> arg) {
+			AddStatement(std::forward<Args>(args)...);
+
+			/*auto f = [&](std::unique_ptr<Statement> arg) {
 				args_.push_back(std::move(arg));
 			};
 
-			(..., f(std::forward<Args>(args)));
+			(..., f(std::forward<Args>(args)));*/
 		}
 
 		// Добавляет очередную инструкцию в конец составной инструкции
@@ -266,6 +268,13 @@ namespace ast {
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 
 	private:
+		template <typename... Args>
+		void AddStatement(std::unique_ptr<Statement> stmt, Args&&... args) {
+			args_.push_back(std::move(stmt));
+			AddStatement(std::forward<Args>(args)...);
+		}
+		void AddStatement() {	}
+
 		std::vector<std::unique_ptr<Statement>> args_;
 	};
 
