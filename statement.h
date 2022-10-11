@@ -43,7 +43,7 @@ namespace ast {
 	private:
 		std::string name_;
 		std::vector<std::string> dotted_ids_;
-		//std::shared_ptr<Statement> value_ = nullptr;
+		std::shared_ptr<Statement> value_ = nullptr;
 	};
 
 	// Присваивает переменной, имя которой задано в параметре var, значение выражения rv
@@ -104,14 +104,10 @@ namespace ast {
 	// Вызывает метод object.method со списком параметров args
 	class MethodCall : public Statement {
 	public:
-		MethodCall(std::unique_ptr<Statement> object, std::string method, std::vector<std::unique_ptr<Statement>> args)
-			:object_(std::move(object)), method_(std::move(method)), args_(std::move(args)) {}
+		MethodCall(std::unique_ptr<Statement> object, std::string method,
+			std::vector<std::unique_ptr<Statement>> args);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
-	private:
-		std::unique_ptr<Statement> object_;
-		std::string method_;
-		std::vector<std::unique_ptr<Statement>> args_;
 	};
 
 	/*
@@ -281,7 +277,7 @@ namespace ast {
 	// Тело метода. Как правило, содержит составную инструкцию
 	class MethodBody : public Statement {
 	public:
-		explicit MethodBody(std::unique_ptr<Statement>&& body) : body_(std::move(body)) {}
+		explicit MethodBody(std::unique_ptr<Statement>&& body);
 
 		// Вычисляет инструкцию, переданную в качестве body.
 		// Если внутри body была выполнена инструкция return, возвращает результат return
@@ -315,7 +311,8 @@ namespace ast {
 		// конструктор
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	private:
-		runtime::ObjectHolder class_;
+		runtime::ObjectHolder obj_;
+		runtime::ClassInstance class_;
 	};
 
 	// Инструкция if <condition> <if_body> else <else_body>
