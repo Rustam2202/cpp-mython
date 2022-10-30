@@ -5,159 +5,202 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <variant>
 
 namespace parse {
 
-	namespace token_type {
-		struct Number {  // Лексема «число»
-			int value;   // число
-		};
+    namespace token_type {
+        struct Number {  // Лексема «число»
+            int value;   // число
+        };
 
-		struct Id {             // Лексема «идентификатор»
-			std::string value;  // Имя идентификатора
-		};
+        struct Id {             // Лексема «идентификатор»
+            std::string value;  // Имя идентификатора
+        };
 
-		struct Char {    // Лексема «символ»
-			char value;  // код символа
-		};
+        struct Char {    // Лексема «символ»
+            char value;  // код символа
+        };
 
-		struct String {  // Лексема «строковая константа»
-			std::string value;
-		};
+        struct String {  // Лексема «строковая константа»
+            std::string value;
+        };
 
-		struct Class {};    // Лексема «class»
-		struct Return {};   // Лексема «return»
-		struct If {};       // Лексема «if»
-		struct Else {};     // Лексема «else»
-		struct Def {};      // Лексема «def»
-		struct Newline {};  // Лексема «конец строки»
-		struct Print {};    // Лексема «print»
-		struct Indent {};  // Лексема «увеличение отступа», соответствует двум пробелам
-		struct Dedent {};  // Лексема «уменьшение отступа»
-		struct Eof {};     // Лексема «конец файла»
-		struct And {};     // Лексема «and»
-		struct Or {};      // Лексема «or»
-		struct Not {};     // Лексема «not»
-		struct Eq {};      // Лексема «==»
-		struct NotEq {};   // Лексема «!=»
-		struct LessOrEq {};     // Лексема «<=»
-		struct GreaterOrEq {};  // Лексема «>=»
-		struct None {};         // Лексема «None»
-		struct True {};         // Лексема «True»
-		struct False {};        // Лексема «False»
-	}  // namespace token_type
+        struct Class {};    // Лексема «class»
+        struct Return {};   // Лексема «return»
+        struct If {};       // Лексема «if»
+        struct Else {};     // Лексема «else»
+        struct Def {};      // Лексема «def»
+        struct Newline {};  // Лексема «конец строки»
+        struct Print {};    // Лексема «print»
+        struct Indent {};  // Лексема «увеличение отступа», соответствует двум пробелам
+        struct Dedent {};  // Лексема «уменьшение отступа»
+        struct Eof {};     // Лексема «конец файла»
+        struct And {};     // Лексема «and»
+        struct Or {};      // Лексема «or»
+        struct Not {};     // Лексема «not»
+        struct Eq {};      // Лексема «==»
+        struct NotEq {};   // Лексема «!=»
+        struct LessOrEq {};     // Лексема «<=»
+        struct GreaterOrEq {};  // Лексема «>=»
+        struct None {};         // Лексема «None»
+        struct True {};         // Лексема «True»
+        struct False {};        // Лексема «False»
+    }  // namespace token_type
 
-	using TokenBase
-		= std::variant<token_type::Number, token_type::Id, token_type::Char, token_type::String,
-		token_type::Class, token_type::Return, token_type::If, token_type::Else,
-		token_type::Def, token_type::Newline, token_type::Print, token_type::Indent,
-		token_type::Dedent, token_type::And, token_type::Or, token_type::Not,
-		token_type::Eq, token_type::NotEq, token_type::LessOrEq, token_type::GreaterOrEq,
-		token_type::None, token_type::True, token_type::False, token_type::Eof>;
 
-	struct Token : TokenBase {
-		using TokenBase::TokenBase;
 
-		template <typename T>
-		[[nodiscard]] bool Is() const {
-			return std::holds_alternative<T>(*this);
-		}
+    using TokenBase
+        = std::variant<token_type::Number, token_type::Id, token_type::Char, token_type::String,
+        token_type::Class, token_type::Return, token_type::If, token_type::Else,
+        token_type::Def, token_type::Newline, token_type::Print, token_type::Indent,
+        token_type::Dedent, token_type::And, token_type::Or, token_type::Not,
+        token_type::Eq, token_type::NotEq, token_type::LessOrEq, token_type::GreaterOrEq,
+        token_type::None, token_type::True, token_type::False, token_type::Eof>;
 
-		template <typename T>
-		[[nodiscard]] const T& As() const {
-			return std::get<T>(*this);
-		}
+    struct Token : TokenBase {
+        using TokenBase::TokenBase;
 
-		template <typename T>
-		[[nodiscard]] const T* TryAs() const {
-			return std::get_if<T>(this);
-		}
-	};
+        template <typename T>
+        [[nodiscard]] bool Is() const {
+            return std::holds_alternative<T>(*this);
+        }
 
-	bool operator==(const Token& lhs, const Token& rhs);
-	bool operator!=(const Token& lhs, const Token& rhs);
+        template <typename T>
+        [[nodiscard]] const T& As() const {
+            return std::get<T>(*this);
+        }
 
-	std::ostream& operator<<(std::ostream& os, const Token& rhs);
+        template <typename T>
+        [[nodiscard]] const T* TryAs() const {
+            return std::get_if<T>(this);
+        }
+    };
 
-	class LexerError : public std::runtime_error {
-	public:
-		using std::runtime_error::runtime_error;
-	};
+    bool operator==(const Token& lhs, const Token& rhs);
+    bool operator!=(const Token& lhs, const Token& rhs);
 
-	class Lexer {
-	public:
-		explicit Lexer(std::istream& input);
+    std::ostream& operator<<(std::ostream& os, const Token& rhs);
 
-		// Возвращает ссылку на текущий токен или token_type::Eof, если поток токенов закончился
-		[[nodiscard]] const Token& CurrentToken() const;
+    class LexerError : public std::runtime_error {
+    public:
+        using std::runtime_error::runtime_error;
+    };
 
-		// Возвращает следующий токен, либо token_type::Eof, если поток токенов закончился
-		Token NextToken();
+    class Lexer {
+    public:
+        explicit Lexer(std::istream& input);
 
-		// Если текущий токен имеет тип T, метод возвращает ссылку на него.
-		// В противном случае метод выбрасывает исключение LexerError
-		template <typename T>
-		const T& Expect() const {
-			using namespace std::literals;
-			// Заглушка. Реализуйте метод самостоятельно
-			if (current_token_.Is<T>()) {
-				return current_token_.As<T>();
-			}
-			throw LexerError("Not implemented"s);
-		}
+        // Возвращает ссылку на текущий токен или token_type::Eof, если поток токенов закончился
+        [[nodiscard]] const Token& CurrentToken() const;
 
-		// Метод проверяет, что текущий токен имеет тип T, а сам токен содержит значение value.
-		// В противном случае метод выбрасывает исключение LexerError
-		template <typename T, typename U>
-		void Expect(const U& value) const {
-			using namespace std::literals;
-			// Заглушка. Реализуйте метод самостоятельно
-			using namespace parse::token_type;
-			if (current_token_.Is<T>()) {
-				if (current_token_.TryAs<T>()->value == value) {
-					return;
-				}
-			}
-			throw LexerError("Not implemented"s);
-		}
+        // Возвращает следующий токен, либо token_type::Eof, если поток токенов закончился
+        Token NextToken();
 
-		// Если следующий токен имеет тип T, метод возвращает ссылку на него.
-		// В противном случае метод выбрасывает исключение LexerError
-		template <typename T>
-		const T& ExpectNext() {
-			using namespace std::literals;
-			// Заглушка. Реализуйте метод самостоятельно
-			NextToken();
-			return Expect<T>();
-			//throw LexerError("Not implemented"s);
-		}
+        // Если текущий токен имеет тип T, метод возвращает ссылку на него.
+        // В противном случае метод выбрасывает исключение LexerError
+        template <typename T>
+        const T& Expect() const {
+            using namespace std::literals;
+            if (current_token_.Is<T>()) {
+                return current_token_.As<T>();
+            }
+            throw LexerError("Not implemented"s);
+        }
 
-		// Метод проверяет, что следующий токен имеет тип T, а сам токен содержит значение value.
-		// В противном случае метод выбрасывает исключение LexerError
-		template <typename T, typename U>
-		void ExpectNext(const U& value) {
-			using namespace std::literals;
-			// Заглушка. Реализуйте метод самостоятельно
-			NextToken();
-			Expect<T>(value);
+        // Метод проверяет, что текущий токен имеет тип T, а сам токен содержит значение value.
+        // В противном случае метод выбрасывает исключение LexerError
+        template <typename T, typename U>
+        void Expect(const U& value) const {
+            using namespace std::literals;
+            if (current_token_.Is<T>() &&
+                current_token_.As<T>().value == value) {
+                return;
+            }
+            throw LexerError("Not implemented"s);
+        }
 
-			//throw LexerError("Not implemented"s);
-		}
+        // Если следующий токен имеет тип T, метод возвращает ссылку на него.
+        // В противном случае метод выбрасывает исключение LexerError
+        template <typename T>
+        const T& ExpectNext() {
+            NextToken();
+            return Expect<T>();
+        }
 
-	private:
-		// Реализуйте приватную часть самостоятельно
-		Token& ParseDigit();
-		Token& ParseString(char);
-		Token& ParseId(char);
-		Token& ParsePunct(char);
+        // Метод проверяет, что следующий токен имеет тип T, а сам токен содержит значение value.
+        // В противном случае метод выбрасывает исключение LexerError
+        template <typename T, typename U>
+        void ExpectNext(const U& value) {
+            NextToken();
+            Expect<T>(value);
+        }
 
-		std::istream& istrm_;
+    private:
+        std::istream& input_;
+        bool start_of_line_ = true; 
+        uint32_t current_indent_ = 0; 
+        uint32_t line_indent_ = 0; 
+        Token current_token_; 
 
-		Token current_token_;
-		uint32_t spaces_count_ = 0;
-		uint32_t indent_pos_ = 0;
-		int indent_offset_ = 0;
-	};
+        void ReadNextToken();
+        void NextLine();
+        void ParseComment();
+        void ParseEOF();
+        void ParseLineEnd();
+        void ParseSpaces();
+        void ParseIndent();
+        void ParseToken();
+        void ParseName();
+        void ParseChar();
+    };
 
 }  // namespace parse
+
+namespace util {
+
+    static std::unordered_map<std::string, parse::Token> KeyWords =
+    {
+     {"class",   parse::token_type::Class{}},
+     {"return",  parse::token_type::Return{}},
+     {"if",      parse::token_type::If{}},
+     {"else",    parse::token_type::Else{}},
+     {"def",     parse::token_type::Def{}},
+     {"print",   parse::token_type::Print{}},
+     {"and",     parse::token_type::And{}},
+     {"or",      parse::token_type::Or{}},
+     {"not",     parse::token_type::Not{}},
+     {"None",    parse::token_type::None{}},
+     {"True",    parse::token_type::True{}},
+     {"False",   parse::token_type::False{}}
+    };
+
+    static std::unordered_map<std::string, parse::Token> DualSymbols =
+    {
+     {"==",  parse::token_type::Eq{}},
+     {"!=",  parse::token_type::NotEq{}},
+     {">=",  parse::token_type::GreaterOrEq{}},
+     {"<=",  parse::token_type::LessOrEq{}}
+    };
+
+    // проверяет является ли символ цифрой
+    bool IsNum(char ch);
+    // проверяет является ли символ буквой
+    bool IsAlpha(char ch);
+    // проверяет является ли символ цифрой или буквой
+    bool IsAlNum(char ch);
+    // проверяет является ли символ цифрой буквой или знаком подчёркивания
+    bool IsAlNumLL(char ch);
+    // считывает строку от открывающейся кавычки до закрывающейся кавычки с учётом экранированных символов
+    std::string ReadString(std::istream& input);
+    // считывает идентификатор, состоящий из букв, цифр и символов подчеркивания
+    std::string ReadName(std::istream& input);
+    // считывает целое число
+    int ReadNumber(std::istream& input);
+    // считает все подряд идущих пробелы в строке и возвращает их кол-во
+    size_t CountSpaces(std::istream& input);
+    // считывает строку целиком
+    std::string ReadLine(std::istream& input);
+
+} // namespace util

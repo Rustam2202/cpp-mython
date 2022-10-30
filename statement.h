@@ -3,13 +3,13 @@
 #include "runtime.h"
 
 #include <functional>
-#include <iostream> //
 
 namespace ast {
 
 	using Statement = runtime::Executable;
 
-	// Выражение, возвращающее значение типа T, используется как основа для создания констант
+	// Выражение, возвращающее значение типа T,
+	// используется как основа для создания констант
 	template <typename T>
 	class ValueStatement : public Statement {
 	public:
@@ -17,7 +17,8 @@ namespace ast {
 			: value_(std::move(v)) {
 		}
 
-		runtime::ObjectHolder Execute(runtime::Closure& /*closure*/, runtime::Context& /*context*/) override {
+		runtime::ObjectHolder Execute(runtime::Closure& /*closure*/,
+			runtime::Context& /*context*/) override {
 			return runtime::ObjectHolder::Share(value_);
 		}
 
@@ -31,7 +32,8 @@ namespace ast {
 
 	/*
 	Вычисляет значение переменной либо цепочки вызовов полей объектов id1.id2.id3.
-	Например, выражение circle.center.x - цепочка вызовов полей объектов в инструкции: x = circle.center.x
+	Например, выражение circle.center.x - цепочка вызовов полей объектов в инструкции:
+	x = circle.center.x
 	*/
 	class VariableValue : public Statement {
 	public:
@@ -39,11 +41,9 @@ namespace ast {
 		explicit VariableValue(std::vector<std::string> dotted_ids);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
-
 	private:
-		std::string name_;
+		std::string var_name_;
 		std::vector<std::string> dotted_ids_;
-		std::shared_ptr<Statement> value_ = nullptr;
 	};
 
 	// Присваивает переменной, имя которой задано в параметре var, значение выражения rv
@@ -52,12 +52,8 @@ namespace ast {
 		Assignment(std::string var, std::unique_ptr<Statement> rv);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
-
-		//const std::string& GetName() { return name_; }
-		//const std::unique_ptr<Statement>& GetValue() { return rv_; }
-
 	private:
-		std::string name_;
+		std::string var_;
 		std::unique_ptr<Statement> rv_;
 	};
 
@@ -97,7 +93,6 @@ namespace ast {
 		// context.GetOutputStream()
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	private:
-		static std::string name_;
 		std::vector<std::unique_ptr<Statement>> args_;
 	};
 
@@ -108,6 +103,10 @@ namespace ast {
 			std::vector<std::unique_ptr<Statement>> args);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		std::unique_ptr<Statement> object_;
+		std::string method_;
+		std::vector<std::unique_ptr<Statement>> args_;
 	};
 
 	/*
@@ -130,19 +129,17 @@ namespace ast {
 		// Возвращает объект, содержащий значение типа ClassInstance
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	private:
-		runtime::ClassInstance cls_;
+		runtime::ClassInstance class_instance_;
 		std::vector<std::unique_ptr<Statement>> args_;
 	};
 
 	// Базовый класс для унарных операций
 	class UnaryOperation : public Statement {
 	public:
-		explicit UnaryOperation(std::unique_ptr<Statement> argument) :argument_(std::move(argument)) {
-			// Реализуйте метод самостоятельно
+		explicit UnaryOperation(std::unique_ptr<Statement> argument)
+			: argument_{ std::move(argument) } {
 		}
-		std::unique_ptr<Statement>& GetArg() { return argument_; }
-
-	private:
+	protected:
 		std::unique_ptr<Statement> argument_;
 	};
 
@@ -156,16 +153,11 @@ namespace ast {
 	// Родительский класс Бинарная операция с аргументами lhs и rhs
 	class BinaryOperation : public Statement {
 	public:
-		BinaryOperation(std::unique_ptr<Statement> lhs, std::unique_ptr<Statement> rhs) :lhs_(std::move(lhs)), rhs_(std::move(rhs)) {
-			// Реализуйте метод самостоятельно
+		BinaryOperation(std::unique_ptr<Statement> lhs, std::unique_ptr<Statement> rhs)
+			: lhs_{ std::move(lhs) }, rhs_{ std::move(rhs) } {
 		}
-
-		std::unique_ptr<Statement>& GetLhs() { return lhs_; }
-		std::unique_ptr<Statement>& GetRhs() { return rhs_; }
-
-	private:
-		std::unique_ptr<Statement> lhs_;
-		std::unique_ptr<Statement> rhs_;
+	protected:
+		std::unique_ptr<Statement> lhs_, rhs_;
 	};
 
 	// Возвращает результат операции + над аргументами lhs и rhs
@@ -219,7 +211,8 @@ namespace ast {
 	class Or : public BinaryOperation {
 	public:
 		using BinaryOperation::BinaryOperation;
-		// Значение аргумента rhs вычисляется, только если значение lhs после приведения к Bool равно False
+		// Значение аргумента rhs вычисляется, только если значение lhs
+		// после приведения к Bool равно False
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	};
 
@@ -227,7 +220,8 @@ namespace ast {
 	class And : public BinaryOperation {
 	public:
 		using BinaryOperation::BinaryOperation;
-		// Значение аргумента rhs вычисляется, только если значение lhs после приведения к Bool равно True
+		// Значение аргумента rhs вычисляется, только если значение lhs
+		// после приведения к Bool равно True
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	};
 
@@ -244,34 +238,25 @@ namespace ast {
 		// Конструирует Compound из нескольких инструкций типа unique_ptr<Statement>
 		template <typename... Args>
 		explicit Compound(Args&&... args) {
-			// Реализуйте метод самостоятельно
 			AddStatement(std::forward<Args>(args)...);
-
-			/*auto f = [&](std::unique_ptr<Statement> arg) {
-				args_.push_back(std::move(arg));
-			};
-
-			(..., f(std::forward<Args>(args)));*/
 		}
-
 		// Добавляет очередную инструкцию в конец составной инструкции
 		void AddStatement(std::unique_ptr<Statement> stmt) {
-			// Реализуйте метод самостоятельно
 			args_.push_back(std::move(stmt));
 		}
 
 		// Последовательно выполняет добавленные инструкции. Возвращает None
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
-
 	private:
+		std::vector<std::unique_ptr<Statement>> args_;
+
 		template <typename... Args>
 		void AddStatement(std::unique_ptr<Statement> stmt, Args&&... args) {
 			args_.push_back(std::move(stmt));
 			AddStatement(std::forward<Args>(args)...);
 		}
-		void AddStatement() {	}
-
-		std::vector<std::unique_ptr<Statement>> args_;
+		void AddStatement() {
+		}
 	};
 
 	// Тело метода. Как правило, содержит составную инструкцию
@@ -290,8 +275,8 @@ namespace ast {
 	// Выполняет инструкцию return с выражением statement
 	class Return : public Statement {
 	public:
-		explicit Return(std::unique_ptr<Statement> statement) :statement_(std::move(statement)) {
-			// Реализуйте метод самостоятельно
+		explicit Return(std::unique_ptr<Statement> statement)
+			: statement_{ std::move(statement) } {
 		}
 
 		// Останавливает выполнение текущего метода. После выполнения инструкции return метод,
@@ -311,8 +296,7 @@ namespace ast {
 		// конструктор
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 	private:
-		runtime::ObjectHolder obj_;
-		runtime::ClassInstance class_;
+		runtime::ObjectHolder cls_;
 	};
 
 	// Инструкция if <condition> <if_body> else <else_body>
@@ -323,6 +307,8 @@ namespace ast {
 			std::unique_ptr<Statement> else_body);
 
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		std::unique_ptr<Statement> condition_, if_body_, else_body_;
 	};
 
 	// Операция сравнения
@@ -337,6 +323,8 @@ namespace ast {
 		// Вычисляет значение выражений lhs и rhs и возвращает результат работы comparator,
 		// приведённый к типу runtime::Bool
 		runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+	private:
+		Comparator comp_;
 	};
 
 }  // namespace ast
